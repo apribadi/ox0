@@ -71,6 +71,14 @@ static inline bc_t bc_add(u8 dst, u8 x, u8 y) {
   return bc_make_3(BC_OP_ADD, dst, x, y);
 }
 
+static inline bc_t bc_sub(u8 dst, u8 x, u8 y) {
+  return bc_make_3(BC_OP_SUB, dst, x, y);
+}
+
+static inline bc_t bc_mul(u8 dst, u8 x, u8 y) {
+  return bc_make_3(BC_OP_MUL, dst, x, y);
+}
+
 static void bc_show(bc_t t) {
   switch (bc_op(t)) {
     case BC_OP_RETURN:
@@ -97,14 +105,14 @@ static void bc_show(bc_t t) {
 // bc_prog
 
 typedef struct {
-  i64 count;
+  i64 len;
   bc_t code[];
 } bc_prog_t;
 
 static void bc_prog_show(bc_prog_t * t) {
-  i64 count = t->count;
+  i64 len = t->len;
 
-  for (i64 i = 0; i < count; i ++) {
+  for (i64 i = 0; i < len; i ++) {
     bc_show(t->code[i]);
   }
 }
@@ -112,19 +120,19 @@ static void bc_prog_show(bc_prog_t * t) {
 // bc_buf
 
 typedef struct {
-  i64 count;
+  i64 len;
   i64 capacity;
   bc_t * code;
 } bc_buf_t;
 
-static void bc_buf_make(bc_buf_t * t) {
-  t->count = 0;
+static void bc_buf_init(bc_buf_t * t) {
+  t->len = 0;
   t->capacity = 0;
   t->code = NULL;
 }
 
 static void bc_buf_add(bc_buf_t * t, bc_t bc) {
-  if (t->count + 1 > t->capacity) {
+  if (t->len + 1 > t->capacity) {
     i64 old_capacity = t->capacity;
     i64 new_capacity = old_capacity < 8 ? 8 : 2 * old_capacity;
 
@@ -139,17 +147,17 @@ static void bc_buf_add(bc_buf_t * t, bc_t bc) {
     t->code = new_code;
   }
 
-  t->code[t->count ++] = bc;
+  t->code[t->len ++] = bc;
 }
 
 static bc_prog_t * bc_buf_prog(bc_buf_t * t) {
-  i64 count = t->count;
+  i64 len = t->len;
 
-  bc_prog_t * prog = allocate(sizeof(bc_prog_t) + sizeof(bc_t) * count);
+  bc_prog_t * prog = allocate(sizeof(bc_prog_t) + sizeof(bc_t) * len);
 
-  prog->count = count;
+  prog->len = len;
 
-  for (i64 i = 0; i < count; i ++) {
+  for (i64 i = 0; i < len; i ++) {
     prog->code[i] = t->code[i];
   }
 

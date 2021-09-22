@@ -11,7 +11,7 @@ enum {
 
 typedef i64 vm_result_t;
 
-static void vm_make(vm_t * t) {
+static void vm_init(vm_t * t) {
   for (i64 i = 0; i < 256; i ++) {
     t->regs[i] = 0;
   }
@@ -35,6 +35,9 @@ static vm_result_t vm_run(vm_t * t, bc_prog_t * prog) {
 
     switch (op) {
       case BC_OP_RETURN: {
+        printf("r0 = %ld\n", (long) t->regs[0]);
+        printf("r1 = %ld\n", (long) t->regs[1]);
+        printf("r2 = %ld\n", (long) t->regs[2]);
         return VM_RESULT_OK;
       }
       case BC_OP_CONSTANT: {
