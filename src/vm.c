@@ -1,3 +1,5 @@
+// virtual machine
+
 typedef struct {
   i64 regs[256];
 } vm_t;
@@ -26,47 +28,50 @@ static vm_result_t vm_run(vm_t * t, bc_prog_t * prog) {
   bc_t * ip = prog->code;
 
   while (1) {
-    bc_t bc = * (ip ++);
-    bc_op_t op = bc_op(bc);
+    bc_t w = * (ip ++);
 
-    if (OX_TRACE) { bc_show(bc); }
+    if (OX_TRACE) { bc_show(w); }
 
-    switch (op) {
-      case BC_OP_EXIT: {
+    switch (bc_tag(w)) {
+      case BC_EXIT: {
         printf("r0 = %ld\n", (long) t->regs[0]);
         printf("r1 = %ld\n", (long) t->regs[1]);
         printf("r2 = %ld\n", (long) t->regs[2]);
         return VM_RESULT_OK;
       }
-      case BC_OP_IMM: {
-        t->regs[bc_a(bc)] = (i16) bc_d(bc);
+      case BC_IMM: {
+        t->regs[bc_a(w)] = (i16) bc_d(w);
         break;
       }
-      case BC_OP_ADD: {
-        i64 rb = t->regs[bc_b(bc)];
-        i64 rc = t->regs[bc_c(bc)];
+      case BC_MOV: {
+        t->regs[bc_a(w)] = t->regs[bc_b(w)];
+        break;
+      }
+      case BC_ADD: {
+        i64 rb = t->regs[bc_b(w)];
+        i64 rc = t->regs[bc_c(w)];
         i64 ra = rb + rc;
-        t->regs[bc_a(bc)] = ra;
+        t->regs[bc_a(w)] = ra;
         break;
       }
-      case BC_OP_SUB: {
-        i64 rb = t->regs[bc_b(bc)];
-        i64 rc = t->regs[bc_c(bc)];
+      case BC_SUB: {
+        i64 rb = t->regs[bc_b(w)];
+        i64 rc = t->regs[bc_c(w)];
         i64 ra = rb - rc;
-        t->regs[bc_a(bc)] = ra;
+        t->regs[bc_a(w)] = ra;
         break;
       }
-      case BC_OP_MUL: {
-        i64 rb = t->regs[bc_b(bc)];
-        i64 rc = t->regs[bc_c(bc)];
+      case BC_MUL: {
+        i64 rb = t->regs[bc_b(w)];
+        i64 rc = t->regs[bc_c(w)];
         i64 ra = rb * rc;
-        t->regs[bc_a(bc)] = ra;
+        t->regs[bc_a(w)] = ra;
         break;
       }
-      case BC_OP_NEG: {
-        i64 rb = t->regs[bc_b(bc)];
+      case BC_NEG: {
+        i64 rb = t->regs[bc_b(w)];
         i64 ra = - rb;
-        t->regs[bc_a(bc)] = ra;
+        t->regs[bc_a(w)] = ra;
         break;
       }
     }

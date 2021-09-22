@@ -5,45 +5,42 @@
 // least significant <---> most significant
 //
 // |-------|-------|-------|-------|
-//    op       A       B       C
+//    tag      A       B       C
 //
 // |-------|-------|---------------|
-//    op       A           D
+//    tag      A           D
 
 typedef u32 bc_t;
 
-// a bytecode op tag is 8 bits
-
-typedef u8 bc_op_t;
-
 enum {
-  BC_OP_EXIT,
-  BC_OP_IMM, // rA <- #D
-  BC_OP_ADD, // rA <- rB + rC
-  BC_OP_SUB, // rA <- rB - rC
-  BC_OP_MUL, // rA <- rB * rC
-  BC_OP_NEG, // rA <- - rB
+  BC_EXIT,
+  BC_IMM, // rA <- #D
+  BC_MOV, // rA <- rB
+  BC_ADD, // rA <- rB + rC
+  BC_SUB, // rA <- rB - rC
+  BC_MUL, // rA <- rB * rC
+  BC_NEG, // rA <- - rB
 };
-
-static inline bc_op_t bc_op(bc_t t) {
-  return t;
-}
 
 // a bytecode instruction can take one of two layouts
 
-static inline bc_t bc_make_3(bc_op_t op, u8 a, u8 b, u8 c) {
+static inline bc_t bc_make_3(u8 tag, u8 a, u8 b, u8 c) {
   return
-      ((u32) op)
+      ((u32) tag)
     | ((u32) a << 8)
     | ((u32) b << 16)
     | ((u32) c << 24);
 }
 
-static inline bc_t bc_make_2(bc_op_t op, u8 a, u16 d) {
+static inline bc_t bc_make_2(u8 tag, u8 a, u16 d) {
   return
-      ((u32) op)
+      ((u32) tag)
     | ((u32) a << 8)
     | ((u32) d << 16);
+}
+
+static inline u8 bc_tag(bc_t t) {
+  return t;
 }
 
 static inline u8 bc_a(bc_t t) {
@@ -65,49 +62,56 @@ static inline u16 bc_d(bc_t t) {
 // bytecode instruction definitions
 
 static inline bc_t bc_exit(void) {
-  return BC_OP_EXIT;
+  return BC_EXIT;
 }
 
 static inline bc_t bc_imm(u8 ra, i16 imm) {
-  return bc_make_2(BC_OP_IMM, ra, imm);
+  return bc_make_2(BC_IMM, ra, imm);
+}
+
+static inline bc_t bc_mov(u8 ra, u8 rb) {
+  return bc_make_3(BC_MOV, ra, rb, 0);
 }
 
 static inline bc_t bc_add(u8 ra, u8 rb, u8 rc) {
-  return bc_make_3(BC_OP_ADD, ra, rb, rc);
+  return bc_make_3(BC_ADD, ra, rb, rc);
 }
 
 static inline bc_t bc_sub(u8 ra, u8 rb, u8 rc) {
-  return bc_make_3(BC_OP_SUB, ra, rb, rc);
+  return bc_make_3(BC_SUB, ra, rb, rc);
 }
 
 static inline bc_t bc_mul(u8 ra, u8 rb, u8 rc) {
-  return bc_make_3(BC_OP_MUL, ra, rb, rc);
+  return bc_make_3(BC_MUL, ra, rb, rc);
 }
 
 static inline bc_t bc_neg(u8 ra, u8 rb) {
-  return bc_make_3(BC_OP_NEG, ra, rb, 0);
+  return bc_make_3(BC_NEG, ra, rb, 0);
 }
 
 // display a bytecode instruction for debugging
 
 static void bc_show(bc_t t) {
-  switch (bc_op(t)) {
-    case BC_OP_EXIT:
+  switch (bc_tag(t)) {
+    case BC_EXIT:
       printf("EXIT\n");
       break;
-    case BC_OP_IMM:
+    case BC_IMM:
       printf("IMM: r%d <- #%d\n", bc_a(t), bc_d(t));
       break;
-    case BC_OP_ADD:
+    case BC_MOV:
+      printf("MOV: r%d <- r%d\n", bc_a(t), bc_b(t));
+      break;
+    case BC_ADD:
       printf("ADD: r%d <- r%d + r%d\n", bc_a(t), bc_b(t), bc_c(t));
       break;
-    case BC_OP_SUB:
+    case BC_SUB:
       printf("SUB: r%d <- r%d - r%d\n", bc_a(t), bc_b(t), bc_c(t));
       break;
-    case BC_OP_MUL:
+    case BC_MUL:
       printf("MUL: r%d <- r%d * r%d\n", bc_a(t), bc_b(t), bc_c(t));
       break;
-    case BC_OP_NEG:
+    case BC_NEG:
       printf("NEG: r%d <- - r%d\n", bc_a(t), bc_b(t));
       break;
     default:

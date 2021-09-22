@@ -8,9 +8,22 @@
 #include "mm.c"
 #include "bc.c"
 #include "vm.c"
+#include "io.c"
 #include "test.c"
 
 int main(int argc, const char * argv[]) {
+  if (argc != 2) {
+    fprintf(stderr, "Usage: ox [path]\n");
+    return 1;
+  }
+
+  char const * path = argv[1];
+  char * text = io_read(path);
+
+  (void) text;
+
+  /*
+
   (void) argc;
   (void) argv;
 
@@ -29,6 +42,7 @@ int main(int argc, const char * argv[]) {
   vm_drop(&vm);
 
   (void) vm_result;
+  */
 
   return 0;
 }
