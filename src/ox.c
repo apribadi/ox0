@@ -6,7 +6,7 @@
 
 #include "flag.c"
 #include "type.c"
-#include "util.c"
+#include "panic.c"
 #include "memory.c"
 #include "bc.c"
 #include "vm.c"
