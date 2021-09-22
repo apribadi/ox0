@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "flag.c"
 #include "type.c"
 #include "util.c"
 #include "memory.c"

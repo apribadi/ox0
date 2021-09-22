@@ -8,6 +8,7 @@ enum {
   BC_OP_ADD,      // rA <- rB + rC
   BC_OP_SUB,      // rA <- rB - rC
   BC_OP_MUL,      // rA <- rB * rC
+  BC_OP_NEG,      // rA <- - rB
 };
 
 // bc
@@ -63,20 +64,24 @@ static inline bc_t bc_return(void) {
   return BC_OP_RETURN;
 }
 
-static inline bc_t bc_constant(u8 dst, i16 imm) {
-  return bc_make_2(BC_OP_CONSTANT, dst, imm);
+static inline bc_t bc_constant(u8 ra, i16 imm) {
+  return bc_make_2(BC_OP_CONSTANT, ra, imm);
 }
 
-static inline bc_t bc_add(u8 dst, u8 x, u8 y) {
-  return bc_make_3(BC_OP_ADD, dst, x, y);
+static inline bc_t bc_add(u8 ra, u8 rb, u8 rc) {
+  return bc_make_3(BC_OP_ADD, ra, rb, rc);
 }
 
-static inline bc_t bc_sub(u8 dst, u8 x, u8 y) {
-  return bc_make_3(BC_OP_SUB, dst, x, y);
+static inline bc_t bc_sub(u8 ra, u8 rb, u8 rc) {
+  return bc_make_3(BC_OP_SUB, ra, rb, rc);
 }
 
-static inline bc_t bc_mul(u8 dst, u8 x, u8 y) {
-  return bc_make_3(BC_OP_MUL, dst, x, y);
+static inline bc_t bc_mul(u8 ra, u8 rb, u8 rc) {
+  return bc_make_3(BC_OP_MUL, ra, rb, rc);
+}
+
+static inline bc_t bc_neg(u8 ra, u8 rb) {
+  return bc_make_3(BC_OP_NEG, ra, rb, 0);
 }
 
 static void bc_show(bc_t t) {
@@ -95,6 +100,9 @@ static void bc_show(bc_t t) {
       break;
     case BC_OP_MUL:
       printf("MUL: r%d <- r%d * r%d\n", bc_a(t), bc_b(t), bc_c(t));
+      break;
+    case BC_OP_NEG:
+      printf("NEG: r%d <- - r%d\n", bc_a(t), bc_b(t));
       break;
     default:
       printf("UNKNOWN\n");

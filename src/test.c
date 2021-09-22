@@ -7,7 +7,7 @@ bc_prog_t * test_1(void) {
   prog->code[1] = bc_constant(1, 4);
   prog->code[2] = bc_mul(0, 0, 0);
   prog->code[3] = bc_mul(1, 1, 1);
-  prog->code[4] = bc_add(0, 0, 1);
+  prog->code[4] = bc_sub(0, 1, 0);
   prog->code[5] = bc_return();
 
   return prog;

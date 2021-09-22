@@ -63,6 +63,12 @@ static vm_result_t vm_run(vm_t * t, bc_prog_t * prog) {
         t->regs[bc_a(bc)] = ra;
         break;
       }
+      case BC_OP_NEG: {
+        i64 rb = t->regs[bc_b(bc)];
+        i64 ra = - rb;
+        t->regs[bc_a(bc)] = ra;
+        break;
+      }
     }
   }
 }
