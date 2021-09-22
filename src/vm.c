@@ -1,5 +1,3 @@
-#define OX_TRACE 0
-
 typedef struct {
   i64 regs[256];
 } vm_t;
