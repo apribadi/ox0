@@ -32,13 +32,13 @@ static vm_result_t vm_run(vm_t * t, bc_prog_t * prog) {
     if (OX_TRACE) { bc_show(bc); }
 
     switch (op) {
-      case BC_OP_RETURN: {
+      case BC_OP_EXIT: {
         printf("r0 = %ld\n", (long) t->regs[0]);
         printf("r1 = %ld\n", (long) t->regs[1]);
         printf("r2 = %ld\n", (long) t->regs[2]);
         return VM_RESULT_OK;
       }
-      case BC_OP_CONSTANT: {
+      case BC_OP_IMM: {
         t->regs[bc_a(bc)] = (i16) bc_d(bc);
         break;
       }

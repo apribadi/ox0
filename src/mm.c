@@ -1,6 +1,8 @@
+// memory management
+
 // TODO: arena
 
-void * allocate(i64 size) {
+void * mm_alloc(i64 size) {
   void * p = malloc(size);
 
   if (!p) {

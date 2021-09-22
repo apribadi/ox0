@@ -1,3 +1,5 @@
+#define OX_TRACE 0
+
 typedef int8_t i8;
 typedef int16_t i16;
 typedef int32_t i32;
@@ -6,3 +8,9 @@ typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
+
+void panic(const char * message) {
+  fprintf(stderr, "%s\n", message);
+
+  exit(1);
+}

@@ -4,10 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "flag.c"
-#include "type.c"
-#include "panic.c"
-#include "memory.c"
+#include "util.c"
+#include "mm.c"
 #include "bc.c"
 #include "vm.c"
 #include "test.c"
@@ -21,6 +19,10 @@ int main(int argc, const char * argv[]) {
   vm_init(&vm);
 
   bc_prog_t * prog = test_1();
+
+  bc_prog_show(prog);
+
+  printf("\n");
 
   vm_result_t vm_result = vm_run(&vm, prog);
 
