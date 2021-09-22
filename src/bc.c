@@ -4,7 +4,10 @@ typedef u8 bc_op_t;
 
 enum {
   BC_OP_RETURN,
-  BC_OP_CONSTANT, // A = dst, D = immediate i16, sign extended
+  BC_OP_CONSTANT, // rA <- #D
+  BC_OP_ADD,      // rA <- rB + rC
+  BC_OP_SUB,      // rA <- rB - rC
+  BC_OP_MUL,      // rA <- rB * rC
 };
 
 // bc
@@ -22,13 +25,68 @@ typedef u32 bc_t;
 static inline bc_op_t bc_op(bc_t t) {
   return t;
 }
+
+static inline bc_t bc_make_3(bc_op_t op, u8 a, u8 b, u8 c) {
+  return
+      ((u32) op)
+    | ((u32) a << 8)
+    | ((u32) b << 16)
+    | ((u32) c << 24);
+}
+
+static inline bc_t bc_make_2(bc_op_t op, u8 a, u16 d) {
+  return
+      ((u32) op)
+    | ((u32) a << 8)
+    | ((u32) d << 16);
+}
+
+static inline u8 bc_a(bc_t t) {
+  return t >> 8;
+}
+
+static inline u8 bc_b(bc_t t) {
+  return t >> 16;
+}
+
+static inline u8 bc_c(bc_t t) {
+  return t >> 24;
+}
+
+static inline u16 bc_d(bc_t t) {
+  return t >> 16;
+}
+
+// RETURN
+
+static inline bc_t bc_return(void) {
+  return BC_OP_RETURN;
+}
+
+static inline bc_t bc_constant(u8 dst, i16 imm) {
+  return bc_make_2(BC_OP_CONSTANT, dst, imm);
+}
+
+static inline bc_t bc_add(u8 dst, u8 x, u8 y) {
+  return bc_make_3(BC_OP_ADD, dst, x, y);
+}
+
 static void bc_show(bc_t t) {
   switch (bc_op(t)) {
     case BC_OP_RETURN:
       printf("RETURN\n");
       break;
     case BC_OP_CONSTANT:
-      printf("CONSTANT\n");
+      printf("CONSTANT: r%d <- #%d\n", bc_a(t), bc_d(t));
+      break;
+    case BC_OP_ADD:
+      printf("ADD: r%d <- r%d + r%d\n", bc_a(t), bc_b(t), bc_c(t));
+      break;
+    case BC_OP_SUB:
+      printf("SUB: r%d <- r%d * r%d\n", bc_a(t), bc_b(t), bc_c(t));
+      break;
+    case BC_OP_MUL:
+      printf("MUL: r%d <- r%d * r%d\n", bc_a(t), bc_b(t), bc_c(t));
       break;
     default:
       printf("UNKNOWN\n");
@@ -59,7 +117,7 @@ typedef struct {
   bc_t * code;
 } bc_buf_t;
 
-static void bc_buf_init(bc_buf_t * t) {
+static void bc_buf_make(bc_buf_t * t) {
   t->count = 0;
   t->capacity = 0;
   t->code = NULL;

@@ -7,7 +7,8 @@
 #include "type.c"
 #include "util.c"
 #include "memory.c"
-#include "bytecode.c"
+#include "bc.c"
+#include "vm.c"
 
 int main(int argc, const char * argv[]) {
   (void) argc;
