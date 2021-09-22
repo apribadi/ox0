@@ -55,14 +55,27 @@ typedef struct {
 
 typedef struct {
   i64 len;
+  tk_t data[];
+} tk_vec_t;
+
+static tk_vec_t * tk_vec_make(i64 len) {
+  tk_vec_t * t = mm_alloc(sizeof(tk_vec_t) + sizeof(tk_t) * len);
+  t->len = len;
+  return t;
+}
+
+typedef struct {
+  i64 len;
   i64 cap;
   tk_t * data;
 } tk_buf_t;
 
-static void tk_buf_init(tk_buf_t * t) {
-  t->len = 0;
-  t->cap = 0;
-  t->data = NULL;
+static tk_buf_t tk_buf_make(void) {
+  return (tk_buf_t) {
+      .len = 0,
+      .cap = 0,
+      .data = NULL,
+  };
 }
 
 static void tk_buf_add(tk_buf_t * t, tk_t elt) {
@@ -80,4 +93,16 @@ static void tk_buf_add(tk_buf_t * t, tk_t elt) {
   }
 
   t->data[t->len ++] = elt;
+}
+
+static tk_vec_t * tk_buf_vec(tk_buf_t * t) {
+  i64 n = t->len;
+
+  tk_vec_t * r = tk_vec_make(n);
+
+  for (i64 i = 0; i < n; i ++) {
+    r->data[i] = t->data[i];
+  }
+
+  return r;
 }

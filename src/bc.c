@@ -151,10 +151,12 @@ typedef struct {
   bc_t * data;
 } bc_buf_t;
 
-static void bc_buf_init(bc_buf_t * t) {
-  t->len = 0;
-  t->cap = 0;
-  t->data = NULL;
+static bc_buf_t bc_buf_make(void) {
+  return (bc_buf_t) {
+      .len = 0,
+      .cap = 0,
+      .data = NULL,
+  };
 }
 
 static void bc_buf_add(bc_buf_t * t, bc_t elt) {
