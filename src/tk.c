@@ -52,3 +52,32 @@ typedef struct {
   i16 len;
   i32 ofs;
 } tk_t;
+
+typedef struct {
+  i64 len;
+  i64 cap;
+  tk_t * data;
+} tk_buf_t;
+
+static void tk_buf_init(tk_buf_t * t) {
+  t->len = 0;
+  t->cap = 0;
+  t->data = NULL;
+}
+
+static void tk_buf_add(tk_buf_t * t, tk_t elt) {
+  if (t->len >= t->cap) {
+    i64 old_cap = t->cap;
+    i64 new_cap = old_cap < 8 ? 8 : 2 * old_cap;
+
+    tk_t * old_data = t->data;
+    tk_t * new_data = mm_alloc(new_cap * sizeof(tk_t));
+
+    if (old_data) memcpy(new_data, old_data, old_cap * sizeof(tk_t));
+
+    t->cap = new_cap;
+    t->data = new_data;
+  }
+
+  t->data[t->len ++] = elt;
+}

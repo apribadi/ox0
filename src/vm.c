@@ -21,11 +21,11 @@ static void vm_drop(vm_t * t) {
   (void) t;
 }
 
-static vm_result_t vm_run(vm_t * t, bc_prog_t * prog) {
+static vm_result_t vm_run(vm_t * t, bc_vec_t * program) {
   // TODO: Write as a set of mutually recursive functions that tail-call each
   // other, so that we can duplicate the dispatch code.
 
-  bc_t * ip = prog->code;
+  bc_t * ip = program->data;
 
   while (1) {
     bc_t w = * (ip ++);

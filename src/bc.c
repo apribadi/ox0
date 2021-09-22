@@ -120,64 +120,56 @@ static void bc_show(bc_t t) {
   }
 }
 
-// a bytecode program
+// vec
 
 typedef struct {
   i64 len;
-  bc_t code[];
-} bc_prog_t;
+  bc_t data[];
+} bc_vec_t;
 
-static void bc_prog_show(bc_prog_t * t) {
+static bc_vec_t * bc_vec_make(i64 len) {
+  bc_vec_t * t = mm_alloc(sizeof(bc_vec_t) + sizeof(bc_t) * len);
+
+  t->len = len;
+
+  return t;
+}
+
+static void bc_vec_show(bc_vec_t * t) {
   i64 len = t->len;
 
   for (i64 i = 0; i < len; i ++) {
-    bc_show(t->code[i]);
+    bc_show(t->data[i]);
   }
 }
  
-// bc_buf
+// buf
 
 typedef struct {
   i64 len;
-  i64 capacity;
-  bc_t * code;
+  i64 cap;
+  bc_t * data;
 } bc_buf_t;
 
 static void bc_buf_init(bc_buf_t * t) {
   t->len = 0;
-  t->capacity = 0;
-  t->code = NULL;
+  t->cap = 0;
+  t->data = NULL;
 }
 
-static void bc_buf_add(bc_buf_t * t, bc_t bc) {
-  if (t->len + 1 > t->capacity) {
-    i64 old_capacity = t->capacity;
-    i64 new_capacity = old_capacity < 8 ? 8 : 2 * old_capacity;
+static void bc_buf_add(bc_buf_t * t, bc_t elt) {
+  if (t->len >= t->cap) {
+    i64 old_cap = t->cap;
+    i64 new_cap = old_cap < 8 ? 8 : 2 * old_cap;
 
-    bc_t * old_code = t->code;
-    bc_t * new_code = mm_alloc(new_capacity * sizeof(bc_t));
+    bc_t * old_data = t->data;
+    bc_t * new_data = mm_alloc(new_cap * sizeof(bc_t));
 
-    if (old_code) {
-      memcpy(new_code, old_code, old_capacity * sizeof(bc_t));
-    }
+    if (old_data) memcpy(new_data, old_data, old_cap * sizeof(bc_t));
 
-    t->capacity = new_capacity;
-    t->code = new_code;
+    t->cap = new_cap;
+    t->data = new_data;
   }
 
-  t->code[t->len ++] = bc;
-}
-
-static bc_prog_t * bc_buf_prog(bc_buf_t * t) {
-  i64 len = t->len;
-
-  bc_prog_t * prog = mm_alloc(sizeof(bc_prog_t) + sizeof(bc_t) * len);
-
-  prog->len = len;
-
-  for (i64 i = 0; i < len; i ++) {
-    prog->code[i] = t->code[i];
-  }
-
-  return prog;
+  t->data[t->len ++] = elt;
 }
