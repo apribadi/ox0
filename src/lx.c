@@ -52,7 +52,23 @@ static tk_t lx_lex__comment(lx_t * t, u8 * p, u8 * q) {
     c = * q;
   }
 
+  q ++;
+  c = * q;
+
   return lx_lex__jump[c](t, q, q + 1);
+}
+
+static tk_t lx_lex__id(lx_t * t, u8 * p, u8 * q) {
+  u8 c = * q;
+
+  while (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || (c == '_')) {
+    q ++;
+    c = * q;
+  }
+
+  // TODO: keywords
+
+  return tk_make(TK_ID, p, q);
 }
 
 static tk_t lx_lex__comma(lx_t * t, u8 * p, u8 * q) {
@@ -161,64 +177,64 @@ static tk_t (* lx_lex__jump[])(lx_t *, u8 *, u8 *) = {
   lx_lex__error, // >
   lx_lex__error, // ?
   lx_lex__error, // @
-  lx_lex__error, // A
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error, // Z
+  lx_lex__id, // A
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id, // Z
   lx_lex__lbracket, // [
   lx_lex__error, // '\'
   lx_lex__rbracket, // ]
   lx_lex__error, // ^
   lx_lex__error, // _
   lx_lex__error, // `
-  lx_lex__error, // a
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error,
-  lx_lex__error, // z
+  lx_lex__id, // a
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id,
+  lx_lex__id, // z
   lx_lex__lbrace, // {
   lx_lex__error, // |
   lx_lex__rbrace, // }

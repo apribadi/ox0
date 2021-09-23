@@ -19,32 +19,16 @@ int main(int argc, const char * argv[]) {
     return 1;
   }
 
-  char const * path = argv[1];
-  char * text = io_read(path);
+  u8 * source = io_read(argv[1]);
 
-  (void) text;
+  lx_t lexer = lx_make(source);
 
-  /*
+  tk_t token = lx_lex(&lexer);
 
-  (void) argc;
-  (void) argv;
-
-  vm_t vm;
-
-  vm_init(&vm);
-
-  bc_prog_t * prog = test_1();
-
-  bc_prog_show(prog);
-
-  printf("\n");
-
-  vm_result_t vm_result = vm_run(&vm, prog);
-
-  vm_drop(&vm);
-
-  (void) vm_result;
-  */
+  while (token.tag != TK_EOF) {
+    tk_show(token);
+    token = lx_lex(&lexer);
+  }
 
   return 0;
 }
