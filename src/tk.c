@@ -3,6 +3,7 @@
 enum {
   // punctuation
 
+  TK_LET_EQUAL,
   TK_COMMA,
   TK_PERIOD,
   TK_COLON,
@@ -14,17 +15,18 @@ enum {
   TK_LPAREN,
   TK_RPAREN,
 
-  // operators
+  // operator
 
-  TK_EQUAL,
+  TK_ADD,
+  TK_SUB,
+  TK_MUL,
+  TK_DIV,
+  TK_EQ,
+  TK_NQ,
   TK_GE,
   TK_GT,
   TK_LE,
   TK_LT,
-  TK_MINUS,
-  TK_PLUS,
-  TK_SLASH,
-  TK_STAR,
 
   // keyword
 
@@ -40,9 +42,9 @@ enum {
   TK_THEN,
   TK_WHILE,
 
+  TK_ID,
   TK_EOF,
   TK_ERROR,
-  TK_ID,
 };
 
 typedef struct {
@@ -61,6 +63,7 @@ static inline i64 tk_len(tk_t t) {
 
 static char const * tk_name(tk_t t) {
   switch (t.tag) {
+    case TK_LET_EQUAL: return "LET_EQUAL";
     case TK_COMMA: return "COMMA";
     case TK_PERIOD: return "PERIOD";
     case TK_COLON: return "COLON";
@@ -71,9 +74,9 @@ static char const * tk_name(tk_t t) {
     case TK_RBRACKET: return "RBRACKET";
     case TK_LPAREN: return "LPAREN";
     case TK_RPAREN: return "RPAREN";
+    case TK_ID: return "ID";
     case TK_EOF: return "EOF";
     case TK_ERROR: return "ERROR";
-    case TK_ID: return "ID";
   }
 
   return "UNKNOWN";
