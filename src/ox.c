@@ -21,13 +21,10 @@ int main(int argc, const char * argv[]) {
 
   u8 * source = io_read(argv[1]);
 
-  lx_t lexer = lx_make(source);
+  lx_t lex = lx_make(source);
 
-  tk_t token = lx_lex(&lexer);
-
-  while (token.tag != TK_EOF) {
-    tk_show(token);
-    token = lx_lex(&lexer);
+  for (tk_t tok = lx_next(&lex); tok.tag != TK_EOF; tok = lx_next(&lex)) {
+    tk_show(tok);
   }
 
   return 0;
