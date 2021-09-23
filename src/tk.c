@@ -5,7 +5,7 @@ enum {
 
   TK_LET_EQUAL,
   TK_COMMA,
-  TK_PERIOD,
+  TK_DOT,
   TK_COLON,
   TK_SEMICOLON,
   TK_LBRACE,
@@ -22,7 +22,7 @@ enum {
   TK_MUL,
   TK_DIV,
   TK_EQ,
-  TK_NQ,
+  TK_NE,
   TK_GE,
   TK_GT,
   TK_LE,
@@ -43,6 +43,8 @@ enum {
   TK_WHILE,
 
   TK_ID,
+  TK_NUM,
+
   TK_EOF,
   TK_ERROR,
 };
@@ -65,7 +67,7 @@ static char const * tk_name(tk_t t) {
   switch (t.tag) {
     case TK_LET_EQUAL: return "LET_EQUAL";
     case TK_COMMA: return "COMMA";
-    case TK_PERIOD: return "PERIOD";
+    case TK_DOT: return "DOT";
     case TK_COLON: return "COLON";
     case TK_SEMICOLON: return "SEMICOLON";
     case TK_LBRACE: return "LBRACE";
@@ -74,7 +76,18 @@ static char const * tk_name(tk_t t) {
     case TK_RBRACKET: return "RBRACKET";
     case TK_LPAREN: return "LPAREN";
     case TK_RPAREN: return "RPAREN";
+    case TK_ADD: return "ADD";
+    case TK_SUB: return "SUB";
+    case TK_MUL: return "MUL";
+    case TK_DIV: return "DIV";
+    case TK_EQ: return "EQ";
+    case TK_NE: return "NE";
+    case TK_GE: return "GE";
+    case TK_GT: return "GT";
+    case TK_LE: return "LE";
+    case TK_LT: return "LT";
     case TK_ID: return "ID";
+    case TK_NUM: return "NUM";
     case TK_EOF: return "EOF";
     case TK_ERROR: return "ERROR";
   }

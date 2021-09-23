@@ -12,7 +12,7 @@ typedef struct {
 
 // Source MUST be terminated by a '\0' character.
 
-static lx_t lx_make(u8 * source) {
+static inline lx_t lx_make(u8 * source) {
   return (lx_t) { .next = source };
 }
 
@@ -60,6 +60,8 @@ static tk_t lx_next__comment(u8 * p, u8 * q) {
     c = * q;
   }
 
+  // We include the line break in the comment token.
+
   q ++;
   c = * q;
 
@@ -69,7 +71,7 @@ static tk_t lx_next__comment(u8 * p, u8 * q) {
 static tk_t lx_next__id(u8 * p, u8 * q) {
   u8 c = * q;
 
-  while (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || (c == '_')) {
+  while (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') || (c == '_')) {
     q ++;
     c = * q;
   }
@@ -79,12 +81,23 @@ static tk_t lx_next__id(u8 * p, u8 * q) {
   return tk_make(TK_ID, p, q);
 }
 
+static tk_t lx_next__num(u8 * p, u8 * q) {
+  u8 c = * q;
+
+  while ('0' <= c && c <= '9') {
+    q ++;
+    c = * q;
+  }
+
+  return tk_make(TK_NUM, p, q);
+}
+
 static tk_t lx_next__comma(u8 * p, u8 * q) {
   return tk_make(TK_COMMA, p, q);
 }
 
-static tk_t lx_next__period(u8 * p, u8 * q) {
-  return tk_make(TK_PERIOD, p, q);
+static tk_t lx_next__dot(u8 * p, u8 * q) {
+  return tk_make(TK_DOT, p, q);
 }
 
 static tk_t lx_next__colon(u8 * p, u8 * q) {
@@ -117,6 +130,62 @@ static tk_t lx_next__lparen(u8 * p, u8 * q) {
 
 static tk_t lx_next__rparen(u8 * p, u8 * q) {
   return tk_make(TK_RPAREN, p, q);
+}
+
+static tk_t lx_next__plus(u8 * p, u8 * q) {
+  return tk_make(TK_ADD, p, q);
+}
+
+static tk_t lx_next__dash(u8 * p, u8 * q) {
+  return tk_make(TK_SUB, p, q);
+}
+
+static tk_t lx_next__star(u8 * p, u8 * q) {
+  return tk_make(TK_MUL, p, q);
+}
+
+static tk_t lx_next__slash(u8 * p, u8 * q) {
+  return tk_make(TK_DIV, p, q);
+}
+
+static tk_t lx_next__equal(u8 * p, u8 * q) {
+  u8 c = * q;
+
+  if (c == '=') {
+    return tk_make(TK_EQ, p, q + 1);
+  }
+
+  return tk_make(TK_LET_EQUAL, p, q);
+}
+
+static tk_t lx_next__bang(u8 * p, u8 * q) {
+  u8 c = * q;
+
+  if (c == '=') {
+    return tk_make(TK_NE, p, q + 1);
+  }
+
+  return tk_make(TK_ERROR, p, q);
+}
+
+static tk_t lx_next__langle(u8 * p, u8 * q) {
+  u8 c = * q;
+
+  if (c == '=') {
+    return tk_make(TK_LE, p, q + 1);
+  }
+
+  return tk_make(TK_LT, p, q);
+}
+
+static tk_t lx_next__rangle(u8 * p, u8 * q) {
+  u8 c = * q;
+
+  if (c == '=') {
+    return tk_make(TK_GE, p, q + 1);
+  }
+
+  return tk_make(TK_GT, p, q);
 }
 
 static tk_t (* lx_next__jump[])(u8 *, u8 *) = {
@@ -153,7 +222,7 @@ static tk_t (* lx_next__jump[])(u8 *, u8 *) = {
   lx_next__error,
   lx_next__error,
   lx_next__whitespace, // ' '
-  lx_next__error, // !
+  lx_next__bang, // !
   lx_next__error, // "
   lx_next__comment, // #
   lx_next__error, // $
@@ -162,27 +231,27 @@ static tk_t (* lx_next__jump[])(u8 *, u8 *) = {
   lx_next__error, // '
   lx_next__lparen, // (
   lx_next__rparen, // )
-  lx_next__error, // *
-  lx_next__error, // +
+  lx_next__star, // *
+  lx_next__plus, // +
   lx_next__comma, // ,
-  lx_next__error, // -
-  lx_next__period, // .
-  lx_next__error, // /
-  lx_next__error, // 0
-  lx_next__error,
-  lx_next__error,
-  lx_next__error,
-  lx_next__error,
-  lx_next__error,
-  lx_next__error,
-  lx_next__error,
-  lx_next__error,
-  lx_next__error, // 9
+  lx_next__dash, // -
+  lx_next__dot, // .
+  lx_next__slash, // /
+  lx_next__num, // 0
+  lx_next__num,
+  lx_next__num,
+  lx_next__num,
+  lx_next__num,
+  lx_next__num,
+  lx_next__num,
+  lx_next__num,
+  lx_next__num,
+  lx_next__num, // 9
   lx_next__colon, // :
   lx_next__semicolon, // ;
-  lx_next__error, // <
-  lx_next__error, // =
-  lx_next__error, // >
+  lx_next__langle, // <
+  lx_next__equal, // =
+  lx_next__rangle, // >
   lx_next__error, // ?
   lx_next__error, // @
   lx_next__id, // A
