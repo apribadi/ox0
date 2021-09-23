@@ -137,6 +137,12 @@ static tk_t lx_next__plus(u8 * p, u8 * q) {
 }
 
 static tk_t lx_next__dash(u8 * p, u8 * q) {
+  u8 c = * q;
+
+  if ('0' <= c && c <= '9') {
+    return lx_next__num(p, q + 1);
+  }
+
   return tk_make(TK_SUB, p, q);
 }
 
@@ -146,6 +152,10 @@ static tk_t lx_next__star(u8 * p, u8 * q) {
 
 static tk_t lx_next__slash(u8 * p, u8 * q) {
   return tk_make(TK_DIV, p, q);
+}
+
+static tk_t lx_next__tilde(u8 * p, u8 * q) {
+  return tk_make(TK_NEG, p, q);
 }
 
 static tk_t lx_next__equal(u8 * p, u8 * q) {
@@ -315,7 +325,7 @@ static tk_t (* lx_next__jump[])(u8 *, u8 *) = {
   lx_next__lbrace, // {
   lx_next__error, // |
   lx_next__rbrace, // }
-  lx_next__error, // ~
+  lx_next__tilde, // ~
   lx_next__error,
   lx_next__error,
   lx_next__error,

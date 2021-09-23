@@ -21,6 +21,7 @@ enum {
   TK_SUB,
   TK_MUL,
   TK_DIV,
+  TK_NEG,
   TK_EQ,
   TK_NE,
   TK_GE,
@@ -80,6 +81,7 @@ static char const * tk_name(tk_t t) {
     case TK_SUB: return "SUB";
     case TK_MUL: return "MUL";
     case TK_DIV: return "DIV";
+    case TK_NEG: return "NEG";
     case TK_EQ: return "EQ";
     case TK_NE: return "NE";
     case TK_GE: return "GE";
