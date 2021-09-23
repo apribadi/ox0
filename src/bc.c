@@ -145,6 +145,7 @@ static void bc_vec_show(bc_vec_t * t) {
  
 // buf
 
+/*
 typedef struct {
   i64 len;
   i64 cap;
@@ -175,3 +176,5 @@ static void bc_buf_add(bc_buf_t * t, bc_t elt) {
 
   t->data[t->len ++] = elt;
 }
+*/
+
