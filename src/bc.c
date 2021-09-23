@@ -156,7 +156,7 @@ static bc_buf_t bc_buf_make(void) {
       .len = 0,
       .cap = 0,
       .data = NULL,
-  };
+    };
 }
 
 static void bc_buf_add(bc_buf_t * t, bc_t elt) {
