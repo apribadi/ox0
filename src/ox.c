@@ -19,7 +19,7 @@ int main(int argc, const char * argv[]) {
     return 1;
   }
 
-  u8 * source = io_read(argv[1], 8);
+  char * source = io_read(argv[1]);
 
   lx_t lex = lx_make(source);
 

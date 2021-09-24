@@ -52,11 +52,11 @@ enum {
 
 typedef struct {
   u8 tag;
-  u8 * start;
-  u8 * stop;
+  char * start;
+  char * stop;
 } tk_t;
 
-static inline tk_t tk_make(u8 tag, u8 * start, u8 * stop) {
+static inline tk_t tk_make(u8 tag, char * start, char * stop) {
   return (tk_t) { .tag = tag, .start = start, .stop = stop };
 }
 
