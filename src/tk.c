@@ -31,13 +31,13 @@ enum {
 
   // keyword
 
-  TK_BREAK,
   TK_CASE,
   TK_DO,
   TK_ELIF,
   TK_ELSE,
   TK_END,
   TK_FOR,
+  TK_FUN,
   TK_IF,
   TK_LET,
   TK_THEN,
@@ -88,6 +88,17 @@ static char const * tk_name(tk_t t) {
     case TK_GT: return "GT";
     case TK_LE: return "LE";
     case TK_LT: return "LT";
+    case TK_CASE: return "CASE";
+    case TK_DO: return "DO";
+    case TK_ELIF: return "ELIF";
+    case TK_ELSE: return "ELSE";
+    case TK_END: return "END";
+    case TK_FOR: return "FOR";
+    case TK_FUN: return "FUN";
+    case TK_IF: return "IF";
+    case TK_LET: return "LET";
+    case TK_THEN: return "THEN";
+    case TK_WHILE: return "WHILE";
     case TK_ID: return "ID";
     case TK_NUM: return "NUM";
     case TK_EOF: return "EOF";

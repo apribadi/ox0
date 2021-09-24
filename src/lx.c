@@ -1,4 +1,4 @@
-// lexer
+// lexing
 //
 // lx_t
 //
@@ -10,7 +10,7 @@ typedef struct {
   u8 * next;
 } lx_t;
 
-// Source MUST be terminated by a '\0' character.
+// Source MUST be terminated by the '\0' character repeated 8 times.
 
 static inline lx_t lx_make(u8 * source) {
   return (lx_t) { .next = source };
@@ -76,9 +76,58 @@ static tk_t lx_next__id(u8 * p, u8 * q) {
     c = * q;
   }
 
-  // TODO: keywords
-
   return tk_make(TK_ID, p, q);
+}
+
+static tk_t lx_next__id_c(u8 * p, u8 * q) {
+  if (bcmp(q, "ase", 3) == 0) return tk_make(TK_CASE, p, q + 3);
+
+  return lx_next__id(p, q);
+}
+
+static tk_t lx_next__id_d(u8 * p, u8 * q) {
+  if (bcmp(q, "o", 1) == 0) return tk_make(TK_DO, p, q + 1);
+
+  return lx_next__id(p, q);
+}
+
+static tk_t lx_next__id_e(u8 * p, u8 * q) {
+  if (bcmp(q, "lif", 3) == 0) return tk_make(TK_ELIF, p, q + 3);
+  if (bcmp(q, "lse", 3) == 0) return tk_make(TK_ELSE, p, q + 3);
+  if (bcmp(q, "nd", 2) == 0) return tk_make(TK_END, p, q + 2);
+
+  return lx_next__id(p, q);
+}
+
+static tk_t lx_next__id_f(u8 * p, u8 * q) {
+  if (bcmp(q, "or", 2) == 0) return tk_make(TK_FOR, p, q + 2);
+  if (bcmp(q, "un", 2) == 0) return tk_make(TK_FUN, p, q + 2);
+
+  return lx_next__id(p, q);
+}
+
+static tk_t lx_next__id_i(u8 * p, u8 * q) {
+  if (bcmp(q, "f", 1) == 0) return tk_make(TK_IF, p, q + 1);
+
+  return lx_next__id(p, q);
+}
+
+static tk_t lx_next__id_l(u8 * p, u8 * q) {
+  if (bcmp(q, "et", 2) == 0) return tk_make(TK_LET, p, q + 2);
+
+  return lx_next__id(p, q);
+}
+
+static tk_t lx_next__id_t(u8 * p, u8 * q) {
+  if (bcmp(q, "hen", 3) == 0) return tk_make(TK_THEN, p, q + 3);
+
+  return lx_next__id(p, q);
+}
+
+static tk_t lx_next__id_w(u8 * p, u8 * q) {
+  if (bcmp(q, "hile", 4) == 0) return tk_make(TK_WHILE, p, q + 4);
+
+  return lx_next__id(p, q);
 }
 
 static tk_t lx_next__num(u8 * p, u8 * q) {
@@ -159,41 +208,25 @@ static tk_t lx_next__tilde(u8 * p, u8 * q) {
 }
 
 static tk_t lx_next__equal(u8 * p, u8 * q) {
-  u8 c = * q;
-
-  if (c == '=') {
-    return tk_make(TK_EQ, p, q + 1);
-  }
+  if (bcmp(q, "=", 1) == 0) return tk_make(TK_EQ, p, q + 1);
 
   return tk_make(TK_LET_EQUAL, p, q);
 }
 
 static tk_t lx_next__bang(u8 * p, u8 * q) {
-  u8 c = * q;
-
-  if (c == '=') {
-    return tk_make(TK_NE, p, q + 1);
-  }
+  if (bcmp(q, "=", 1) == 0) return tk_make(TK_NE, p, q + 1);
 
   return tk_make(TK_ERROR, p, q);
 }
 
 static tk_t lx_next__langle(u8 * p, u8 * q) {
-  u8 c = * q;
-
-  if (c == '=') {
-    return tk_make(TK_LE, p, q + 1);
-  }
+  if (bcmp(q, "=", 1) == 0) return tk_make(TK_LE, p, q + 1);
 
   return tk_make(TK_LT, p, q);
 }
 
 static tk_t lx_next__rangle(u8 * p, u8 * q) {
-  u8 c = * q;
-
-  if (c == '=') {
-    return tk_make(TK_GE, p, q + 1);
-  }
+  if (bcmp(q, "=", 1) == 0) return tk_make(TK_GE, p, q + 1);
 
   return tk_make(TK_GT, p, q);
 }
@@ -297,30 +330,30 @@ static tk_t (* lx_next__jump[])(u8 *, u8 *) = {
   lx_next__error, // _
   lx_next__error, // `
   lx_next__id, // a
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
-  lx_next__id,
+  lx_next__id, // b
+  lx_next__id_c, // c
+  lx_next__id_d, // d
+  lx_next__id_e, // e
+  lx_next__id_f, // f
+  lx_next__id, // g
+  lx_next__id, // h
+  lx_next__id_i, // i
+  lx_next__id, // j
+  lx_next__id, // k
+  lx_next__id_l, // l
+  lx_next__id, // m
+  lx_next__id, // n
+  lx_next__id, // o
+  lx_next__id, // p
+  lx_next__id, // q
+  lx_next__id, // r
+  lx_next__id, // s
+  lx_next__id_t, // t
+  lx_next__id, // u
+  lx_next__id, // v
+  lx_next__id_w, // w
+  lx_next__id, // x
+  lx_next__id, // y
   lx_next__id, // z
   lx_next__lbrace, // {
   lx_next__error, // |
