@@ -3,7 +3,7 @@
 enum {
   // punctuation
 
-  TK_LET_EQUAL,
+  TK_ASSIGN,
   TK_COMMA,
   TK_DOT,
   TK_COLON,
@@ -66,7 +66,7 @@ static inline i64 tk_len(tk_t t) {
 
 static char const * tk_name(tk_t t) {
   switch (t.tag) {
-    case TK_LET_EQUAL: return "LET_EQUAL";
+    case TK_ASSIGN: return "ASSIGN";
     case TK_COMMA: return "COMMA";
     case TK_DOT: return "DOT";
     case TK_COLON: return "COLON";

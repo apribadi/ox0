@@ -29,6 +29,18 @@ static inline tk_t lx_next(lx_t * t) {
   return r;
 }
 
+static inline bool lx_is_alpha(char c) {
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+}
+
+static inline bool lx_is_digit(char c) {
+  return ('0' <= c && c <= '9');
+}
+
+static inline bool lx_is_keyword(char * p, char * q, i64 m, i64 n, char * s) {
+  return (p + m + n == q) && ! bcmp(p + m, s, n);
+}
+
 static tk_t lx_next__error(char * p, char * q) {
   return tk_make(TK_ERROR, p, q);
 }
@@ -37,9 +49,7 @@ static tk_t lx_next__eof(char * p, char * q) {
   return tk_make(TK_EOF, p, q);
 }
 
-static tk_t lx_next__whitespace(char * p, char * q) {
-  (void) p;
-
+static tk_t lx_next__whitespace(__attribute__((unused)) char * p, char * q) {
   char c = * q;
 
   while (c == '\t' || c == '\n' || c == ' ') {
@@ -50,9 +60,7 @@ static tk_t lx_next__whitespace(char * p, char * q) {
   return lx_next__start(q, c);
 }
 
-static tk_t lx_next__comment(char * p, char * q) {
-  (void) p;
-
+static tk_t lx_next__comment(__attribute__((unused)) char * p, char * q) {
   char c = * q;
 
   while (c != '\n') {
@@ -68,22 +76,10 @@ static tk_t lx_next__comment(char * p, char * q) {
   return lx_next__start(q, c);
 }
 
-static inline bool lx_is_char_for_id(char c) {
-  return
-    (c == '_')
-    || ('a' <= c && c <= 'z')
-    || ('A' <= c && c <= 'Z')
-    || ('0' <= c && c <= '9');
-}
-
-static inline bool lx_is_keyword(char * p, char * q, char * s, i64 n) {
-  return (p + n == q) && !bcmp(p, s, n);
-}
-
 static tk_t lx_next__id(char * p, char * q) {
   char c = * q;
 
-  while (lx_is_char_for_id(c)) {
+  while (lx_is_alpha(c) || lx_is_digit(c) || c == '_') {
     q ++;
     c = * q;
   }
@@ -94,12 +90,12 @@ static tk_t lx_next__id(char * p, char * q) {
 static tk_t lx_next__id_c(char * p, char * q) {
   char c = * q;
 
-  while (lx_is_char_for_id(c)) {
+  while (lx_is_alpha(c) || lx_is_digit(c) || c == '_') {
     q ++;
     c = * q;
   }
 
-  if (lx_is_keyword(p, q, "case", 4)) return tk_make(TK_CASE, p, q);
+  if (lx_is_keyword(p, q, 1, 3, "ase")) return tk_make(TK_CASE, p, q);
 
   return tk_make(TK_ID, p, q);
 }
@@ -107,12 +103,12 @@ static tk_t lx_next__id_c(char * p, char * q) {
 static tk_t lx_next__id_d(char * p, char * q) {
   char c = * q;
 
-  while (lx_is_char_for_id(c)) {
+  while (lx_is_alpha(c) || lx_is_digit(c) || c == '_') {
     q ++;
     c = * q;
   }
 
-  if (lx_is_keyword(p, q, "do", 2)) return tk_make(TK_DO, p, q);
+  if (lx_is_keyword(p, q, 1, 1, "o")) return tk_make(TK_DO, p, q);
 
   return tk_make(TK_ID, p, q);
 }
@@ -120,14 +116,14 @@ static tk_t lx_next__id_d(char * p, char * q) {
 static tk_t lx_next__id_e(char * p, char * q) {
   char c = * q;
 
-  while (lx_is_char_for_id(c)) {
+  while (lx_is_alpha(c) || lx_is_digit(c) || c == '_') {
     q ++;
     c = * q;
   }
 
-  if (lx_is_keyword(p, q, "elif", 4)) return tk_make(TK_ELIF, p, q);
-  if (lx_is_keyword(p, q, "else", 4)) return tk_make(TK_ELSE, p, q);
-  if (lx_is_keyword(p, q, "end", 3)) return tk_make(TK_END, p, q);
+  if (lx_is_keyword(p, q, 1, 3, "lif")) return tk_make(TK_ELIF, p, q);
+  if (lx_is_keyword(p, q, 1, 3, "lse")) return tk_make(TK_ELSE, p, q);
+  if (lx_is_keyword(p, q, 1, 2, "nd")) return tk_make(TK_END, p, q);
 
   return tk_make(TK_ID, p, q);
 }
@@ -135,13 +131,13 @@ static tk_t lx_next__id_e(char * p, char * q) {
 static tk_t lx_next__id_f(char * p, char * q) {
   char c = * q;
 
-  while (lx_is_char_for_id(c)) {
+  while (lx_is_alpha(c) || lx_is_digit(c) || c == '_') {
     q ++;
     c = * q;
   }
 
-  if (lx_is_keyword(p, q, "for", 3)) return tk_make(TK_FOR, p, q);
-  if (lx_is_keyword(p, q, "fun", 3)) return tk_make(TK_FUN, p, q);
+  if (lx_is_keyword(p, q, 1, 2, "or")) return tk_make(TK_FOR, p, q);
+  if (lx_is_keyword(p, q, 1, 2, "un")) return tk_make(TK_FUN, p, q);
 
   return tk_make(TK_ID, p, q);
 }
@@ -149,12 +145,12 @@ static tk_t lx_next__id_f(char * p, char * q) {
 static tk_t lx_next__id_i(char * p, char * q) {
   char c = * q;
 
-  while (lx_is_char_for_id(c)) {
+  while (lx_is_alpha(c) || lx_is_digit(c) || c == '_') {
     q ++;
     c = * q;
   }
 
-  if (lx_is_keyword(p, q, "if", 2)) return tk_make(TK_IF, p, q);
+  if (lx_is_keyword(p, q, 1, 1, "f")) return tk_make(TK_IF, p, q);
 
   return tk_make(TK_ID, p, q);
 }
@@ -162,12 +158,12 @@ static tk_t lx_next__id_i(char * p, char * q) {
 static tk_t lx_next__id_l(char * p, char * q) {
   char c = * q;
 
-  while (lx_is_char_for_id(c)) {
+  while (lx_is_alpha(c) || lx_is_digit(c) || c == '_') {
     q ++;
     c = * q;
   }
 
-  if (lx_is_keyword(p, q, "let", 3)) return tk_make(TK_LET, p, q);
+  if (lx_is_keyword(p, q, 1, 2, "et")) return tk_make(TK_LET, p, q);
 
   return tk_make(TK_ID, p, q);
 }
@@ -175,12 +171,12 @@ static tk_t lx_next__id_l(char * p, char * q) {
 static tk_t lx_next__id_t(char * p, char * q) {
   char c = * q;
 
-  while (lx_is_char_for_id(c)) {
+  while (lx_is_alpha(c) || lx_is_digit(c) || c == '_') {
     q ++;
     c = * q;
   }
 
-  if (lx_is_keyword(p, q, "then", 4)) return tk_make(TK_THEN, p, q);
+  if (lx_is_keyword(p, q, 1, 3, "hen")) return tk_make(TK_THEN, p, q);
 
   return tk_make(TK_ID, p, q);
 }
@@ -188,12 +184,12 @@ static tk_t lx_next__id_t(char * p, char * q) {
 static tk_t lx_next__id_w(char * p, char * q) {
   char c = * q;
 
-  while (lx_is_char_for_id(c)) {
+  while (lx_is_alpha(c) || lx_is_digit(c) || c == '_') {
     q ++;
     c = * q;
   }
 
-  if (lx_is_keyword(p, q, "while", 5)) return tk_make(TK_WHILE, p, q);
+  if (lx_is_keyword(p, q, 1, 4, "hile")) return tk_make(TK_WHILE, p, q);
 
   return tk_make(TK_ID, p, q);
 }
@@ -201,7 +197,7 @@ static tk_t lx_next__id_w(char * p, char * q) {
 static tk_t lx_next__num(char * p, char * q) {
   char c = * q;
 
-  while ('0' <= c && c <= '9') {
+  while (lx_is_digit(c)) {
     q ++;
     c = * q;
   }
@@ -256,7 +252,7 @@ static tk_t lx_next__plus(char * p, char * q) {
 static tk_t lx_next__dash(char * p, char * q) {
   char c = * q;
 
-  if ('0' <= c && c <= '9') {
+  if (lx_is_digit(c)) {
     return lx_next__num(p, q + 1);
   }
 
@@ -276,25 +272,25 @@ static tk_t lx_next__tilde(char * p, char * q) {
 }
 
 static tk_t lx_next__equal(char * p, char * q) {
-  if (bcmp(q, "=", 1) == 0) return tk_make(TK_EQ, p, q + 1);
+  if (* q == '=') return tk_make(TK_EQ, p, q + 1);
 
-  return tk_make(TK_LET_EQUAL, p, q);
+  return tk_make(TK_ASSIGN, p, q);
 }
 
 static tk_t lx_next__bang(char * p, char * q) {
-  if (bcmp(q, "=", 1) == 0) return tk_make(TK_NE, p, q + 1);
+  if (* q == '=') return tk_make(TK_NE, p, q + 1);
 
   return tk_make(TK_ERROR, p, q);
 }
 
 static tk_t lx_next__langle(char * p, char * q) {
-  if (bcmp(q, "=", 1) == 0) return tk_make(TK_LE, p, q + 1);
+  if (* q == '=') return tk_make(TK_LE, p, q + 1);
 
   return tk_make(TK_LT, p, q);
 }
 
 static tk_t lx_next__rangle(char * p, char * q) {
-  if (bcmp(q, "=", 1) == 0) return tk_make(TK_GE, p, q + 1);
+  if (* q == '=') return tk_make(TK_GE, p, q + 1);
 
   return tk_make(TK_GT, p, q);
 }
