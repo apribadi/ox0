@@ -38,8 +38,8 @@ typedef u8 lx_cc_t;
 // lexer state
 
 enum {
-  LX_ST_AA_BEGIN,
   LX_ST_AA_COMMENT,
+  LX_ST_AA_START,
   LX_ST_ID,
   LX_ST_MINUS,
   LX_ST_NUM,
@@ -54,13 +54,12 @@ enum {
 };
 
 #define LX_ST_SKIP_COUNT 2
-#define LX_ST_NONTERMINAL_COUNT 8
 
 typedef u8 lx_st_t;
 
 static lx_cc_t lx_cc_table[];
 
-static lx_st_t lx_tr_table[LX_ST_NONTERMINAL_COUNT][LX_CC_COUNT];
+static lx_st_t lx_tr_table[][LX_CC_COUNT];
 
 static tk_t (* lx_fn_table[LX_ST_COUNT])(char *, lx_st_t, i64);
 
@@ -74,7 +73,7 @@ static tk_t lx_next__loop(char * p, lx_st_t s, i64 n) {
 
 static inline tk_t lx_next(lx_t * t) {
   char * p = t->next;
-  tk_t r = lx_next__loop(p, LX_ST_AA_BEGIN, 0);
+  tk_t r = lx_next__loop(p, LX_ST_AA_START, 0);
   t->next = r.stop;
   return r;
 }
@@ -440,22 +439,7 @@ static lx_cc_t lx_cc_table[] = {
   LX_CC_ILLEGAL,
 };
 
-static lx_st_t lx_tr_table[LX_ST_NONTERMINAL_COUNT][LX_CC_COUNT] = {
-  // LX_ST_AA_BEGIN
-  {
-    LX_ST_ID, // ALPHA
-    LX_ST_NUM, // DIGIT
-    LX_ST_AA_COMMENT, // HASH
-    LX_ST_ZZ_ERROR, // ILLEGAL
-    LX_ST_MINUS, // MINUS
-    LX_ST_AA_BEGIN, // NEWLINE
-    LX_ST_ZZ_EOF, // NULL
-    LX_ST_OP, // OP
-    LX_ST_ZZ_PUNCT, // PUNCT
-    LX_ST_ZZ_ERROR, // UNDER
-    LX_ST_AA_BEGIN, // WHITE
-  },
-
+static lx_st_t lx_tr_table[][LX_CC_COUNT] = {
   // LX_ST_AA_COMMENT
   {
     LX_ST_AA_COMMENT, // ALPHA
@@ -463,12 +447,27 @@ static lx_st_t lx_tr_table[LX_ST_NONTERMINAL_COUNT][LX_CC_COUNT] = {
     LX_ST_AA_COMMENT, // HASH
     LX_ST_AA_COMMENT, // ILLEGAL
     LX_ST_AA_COMMENT, // MINUS
-    LX_ST_AA_BEGIN, // NEWLINE
+    LX_ST_AA_START, // NEWLINE
     LX_ST_ZZ_EOF, // NULL
     LX_ST_AA_COMMENT, // OP
     LX_ST_AA_COMMENT, // PUNCT
     LX_ST_AA_COMMENT, // UNDER
     LX_ST_AA_COMMENT, // WHITE
+  },
+
+  // LX_ST_AA_START
+  {
+    LX_ST_ID, // ALPHA
+    LX_ST_NUM, // DIGIT
+    LX_ST_AA_COMMENT, // HASH
+    LX_ST_ZZ_ERROR, // ILLEGAL
+    LX_ST_MINUS, // MINUS
+    LX_ST_AA_START, // NEWLINE
+    LX_ST_ZZ_EOF, // NULL
+    LX_ST_OP, // OP
+    LX_ST_ZZ_PUNCT, // PUNCT
+    LX_ST_ZZ_ERROR, // UNDER
+    LX_ST_AA_START, // WHITE
   },
 
   // LX_ST_ID
@@ -534,8 +533,8 @@ static lx_st_t lx_tr_table[LX_ST_NONTERMINAL_COUNT][LX_CC_COUNT] = {
 };
 
 static tk_t (* lx_fn_table[LX_ST_COUNT])(char *, lx_st_t, i64) = {
-  lx_next__loop, // AA_BEGIN
   lx_next__loop, // AA_COMMENT
+  lx_next__loop, // AA_START
   lx_next__loop, // ID
   lx_next__loop, // MINUS
   lx_next__loop, // NUM
