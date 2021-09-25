@@ -2,6 +2,8 @@
 { }
 [ ]
 
+asdf"
+
 # my comment
 
 fun foo(x, y, p)
