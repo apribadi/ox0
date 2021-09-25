@@ -11,14 +11,14 @@ enum {
 
 typedef i64 vm_result_t;
 
-static void vm_init(vm_t * t) {
-  for (i64 i = 0; i < 256; i ++) {
-    t->ireg[i] = 0;
-  }
-}
+static vm_t vm_make(void) {
+  vm_t t;
 
-static void vm_drop(vm_t * t) {
-  (void) t;
+  for (i64 i = 0; i < 256; i ++) {
+    t.ireg[i] = 0;
+  }
+
+  return t;
 }
 
 static vm_result_t vm_run(vm_t * t, bc_vec_t * program) {

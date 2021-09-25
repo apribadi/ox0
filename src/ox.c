@@ -10,7 +10,8 @@
 #include "vm.c"
 #include "io.c"
 #include "tk.c"
-#include "lx.c"
+#include "lx2.c"
+#include "cg.c"
 #include "test.c"
 
 int main(int argc, const char * argv[]) {

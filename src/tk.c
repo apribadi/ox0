@@ -50,14 +50,22 @@ enum {
   TK_ERROR,
 };
 
+typedef u8 tk_tag_t;
+
 typedef struct {
-  u8 tag;
+  tk_tag_t tag;
   char * start;
   char * stop;
 } tk_t;
 
-static inline tk_t tk_make(u8 tag, char * start, char * stop) {
-  return (tk_t) { .tag = tag, .start = start, .stop = stop };
+static inline tk_t tk_make(tk_tag_t tag, char * start, char * stop) {
+  tk_t t;
+
+  t.tag = tag;
+  t.start = start;
+  t.stop = stop;
+
+  return t;
 }
 
 static inline i64 tk_len(tk_t t) {

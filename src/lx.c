@@ -13,7 +13,11 @@ typedef struct {
 // Source MUST be terminated by a '\0' character.
 
 static inline lx_t lx_make(char * source) {
-  return (lx_t) { .next = source };
+  lx_t t;
+
+  t.next = source;
+
+  return t;
 }
 
 static tk_t (* lx_next__jump[])(char *, char *);
@@ -194,7 +198,7 @@ static tk_t lx_next__id_w(char * p, char * q) {
   return tk_make(TK_ID, p, q);
 }
 
-static tk_t lx_next__num(char * p, char * q) {
+static tk_t lx_next__number(char * p, char * q) {
   char c = * q;
 
   while (lx_is_digit(c)) {
@@ -202,7 +206,7 @@ static tk_t lx_next__num(char * p, char * q) {
     c = * q;
   }
 
-  return tk_make(TK_NUM, p, q);
+  return tk_make(TK_NUMBER, p, q);
 }
 
 static tk_t lx_next__comma(char * p, char * q) {
@@ -253,7 +257,7 @@ static tk_t lx_next__dash(char * p, char * q) {
   char c = * q;
 
   if (lx_is_digit(c)) {
-    return lx_next__num(p, q + 1);
+    return lx_next__number(p, q + 1);
   }
 
   return tk_make(TK_SUB, p, q);
@@ -344,16 +348,16 @@ static tk_t (* lx_next__jump[])(char *, char *) = {
   lx_next__dash, // -
   lx_next__dot, // .
   lx_next__slash, // /
-  lx_next__num, // 0
-  lx_next__num,
-  lx_next__num,
-  lx_next__num,
-  lx_next__num,
-  lx_next__num,
-  lx_next__num,
-  lx_next__num,
-  lx_next__num,
-  lx_next__num, // 9
+  lx_next__number, // 0
+  lx_next__number,
+  lx_next__number,
+  lx_next__number,
+  lx_next__number,
+  lx_next__number,
+  lx_next__number,
+  lx_next__number,
+  lx_next__number,
+  lx_next__number, // 9
   lx_next__colon, // :
   lx_next__semicolon, // ;
   lx_next__langle, // <

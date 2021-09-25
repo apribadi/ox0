@@ -145,7 +145,6 @@ static void bc_vec_show(bc_vec_t * t) {
  
 // buf
 
-/*
 typedef struct {
   i64 len;
   i64 cap;
@@ -153,17 +152,19 @@ typedef struct {
 } bc_buf_t;
 
 static bc_buf_t bc_buf_make(void) {
-  return (bc_buf_t) {
-      .len = 0,
-      .cap = 0,
-      .data = NULL,
-    };
+  bc_buf_t t;
+
+  t.len = 0;
+  t.cap = 0;
+  t.data = NULL;
+
+  return t;
 }
 
 static void bc_buf_add(bc_buf_t * t, bc_t elt) {
   if (t->len >= t->cap) {
     i64 old_cap = t->cap;
-    i64 new_cap = old_cap < 8 ? 8 : 2 * old_cap;
+    i64 new_cap = old_cap == 0 ? 8 : 2 * old_cap;
 
     bc_t * old_data = t->data;
     bc_t * new_data = mm_alloc(new_cap * sizeof(bc_t));
@@ -174,7 +175,8 @@ static void bc_buf_add(bc_buf_t * t, bc_t elt) {
     t->data = new_data;
   }
 
-  t->data[t->len ++] = elt;
-}
-*/
+  i64 old_len = t->len;
 
+  t->len = old_len + 1;
+  t->data[old_len] = elt;
+}
