@@ -3,6 +3,7 @@
 typedef struct {
   lx_t lex;
   tk_t tok;
+  tk_t next;
 } pa_t;
 
 static pa_t pa_make(char * source) {

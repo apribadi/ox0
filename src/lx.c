@@ -38,12 +38,12 @@ typedef u8 lx_cc_t;
 // lexer state
 
 enum {
-  LX_ST_AA_COMMENT,
-  LX_ST_AA_START,
   LX_ST_ID,
   LX_ST_MINUS,
   LX_ST_NUM,
   LX_ST_OP,
+  LX_ST_YY_COMMENT,
+  LX_ST_YY_START,
   LX_ST_ZZ_EOF,
   LX_ST_ZZ_ERROR,
   LX_ST_ZZ_ID,
@@ -53,7 +53,7 @@ enum {
   LX_ST_COUNT,
 };
 
-#define LX_ST_SKIP_COUNT 2
+#define LX_ST_INCLUDED_COUNT 4
 
 typedef u8 lx_st_t;
 
@@ -61,10 +61,10 @@ static lx_cc_t lx_cc_table[];
 
 static lx_st_t lx_tr_table[][LX_CC_COUNT];
 
-static tk_t (* lx_fn_table[LX_ST_COUNT])(char *, lx_st_t, i64);
+static tk_t (* lx_fn_table[])(char *, lx_st_t, i64);
 
 static tk_t lx_next__loop(char * p, lx_st_t s, i64 n) {
-  n = n + (s >= LX_ST_SKIP_COUNT);
+  n = n + (s < LX_ST_INCLUDED_COUNT);
   s = lx_tr_table[s][lx_cc_table[(u8) * p]];
   p = p + 1;
 
@@ -73,7 +73,7 @@ static tk_t lx_next__loop(char * p, lx_st_t s, i64 n) {
 
 static inline tk_t lx_next(lx_t * t) {
   char * p = t->next;
-  tk_t r = lx_next__loop(p, LX_ST_AA_START, 0);
+  tk_t r = lx_next__loop(p, LX_ST_YY_START, 0);
   t->next = r.stop;
   return r;
 }
@@ -440,38 +440,7 @@ static lx_cc_t lx_cc_table[] = {
 };
 
 static lx_st_t lx_tr_table[][LX_CC_COUNT] = {
-  // LX_ST_AA_COMMENT
-  {
-    LX_ST_AA_COMMENT, // ALPHA
-    LX_ST_AA_COMMENT, // DIGIT
-    LX_ST_AA_COMMENT, // HASH
-    LX_ST_AA_COMMENT, // ILLEGAL
-    LX_ST_AA_COMMENT, // MINUS
-    LX_ST_AA_START, // NEWLINE
-    LX_ST_ZZ_EOF, // NULL
-    LX_ST_AA_COMMENT, // OP
-    LX_ST_AA_COMMENT, // PUNCT
-    LX_ST_AA_COMMENT, // UNDER
-    LX_ST_AA_COMMENT, // WHITE
-  },
-
-  // LX_ST_AA_START
-  {
-    LX_ST_ID, // ALPHA
-    LX_ST_NUM, // DIGIT
-    LX_ST_AA_COMMENT, // HASH
-    LX_ST_ZZ_ERROR, // ILLEGAL
-    LX_ST_MINUS, // MINUS
-    LX_ST_AA_START, // NEWLINE
-    LX_ST_ZZ_EOF, // NULL
-    LX_ST_OP, // OP
-    LX_ST_ZZ_PUNCT, // PUNCT
-    LX_ST_ZZ_ERROR, // UNDER
-    LX_ST_AA_START, // WHITE
-  },
-
-  // LX_ST_ID
-  {
+  [LX_ST_ID] = {
     LX_ST_ID, // ALPHA
     LX_ST_ID, // DIGIT
     LX_ST_ZZ_ID, // HASH
@@ -484,9 +453,7 @@ static lx_st_t lx_tr_table[][LX_CC_COUNT] = {
     LX_ST_ID, // UNDER
     LX_ST_ZZ_ID, // WHITE
   },
-
-  // LX_ST_MINUS
-  {
+  [LX_ST_MINUS] = {
     LX_ST_ZZ_OP, // ALPHA
     LX_ST_NUM, // DIGIT
     LX_ST_ZZ_OP, // HASH
@@ -499,9 +466,7 @@ static lx_st_t lx_tr_table[][LX_CC_COUNT] = {
     LX_ST_ZZ_OP, // UNDER
     LX_ST_ZZ_OP, // WHITE
   },
-
-  // LX_ST_NUM
-  {
+  [LX_ST_NUM] = {
     LX_ST_ZZ_NUM, // ALPHA
     LX_ST_NUM, // DIGIT
     LX_ST_ZZ_NUM, // HASH
@@ -514,9 +479,7 @@ static lx_st_t lx_tr_table[][LX_CC_COUNT] = {
     LX_ST_ZZ_NUM, // UNDER
     LX_ST_ZZ_NUM, // WHITE
   },
-
-  // LX_ST_OP
-  {
+  [LX_ST_OP] = {
     LX_ST_ZZ_OP, // ALPHA
     LX_ST_ZZ_OP, // DIGIT
     LX_ST_ZZ_OP, // HASH
@@ -529,20 +492,45 @@ static lx_st_t lx_tr_table[][LX_CC_COUNT] = {
     LX_ST_ZZ_OP, // UNDER
     LX_ST_ZZ_OP, // WHITE
   },
-
+  [LX_ST_YY_COMMENT] = {
+    LX_ST_YY_COMMENT, // ALPHA
+    LX_ST_YY_COMMENT, // DIGIT
+    LX_ST_YY_COMMENT, // HASH
+    LX_ST_YY_COMMENT, // ILLEGAL
+    LX_ST_YY_COMMENT, // MINUS
+    LX_ST_YY_START, // NEWLINE
+    LX_ST_ZZ_EOF, // NULL
+    LX_ST_YY_COMMENT, // OP
+    LX_ST_YY_COMMENT, // PUNCT
+    LX_ST_YY_COMMENT, // UNDER
+    LX_ST_YY_COMMENT, // WHITE
+  },
+  [LX_ST_YY_START] = {
+    LX_ST_ID, // ALPHA
+    LX_ST_NUM, // DIGIT
+    LX_ST_YY_COMMENT, // HASH
+    LX_ST_ZZ_ERROR, // ILLEGAL
+    LX_ST_MINUS, // MINUS
+    LX_ST_YY_START, // NEWLINE
+    LX_ST_ZZ_EOF, // NULL
+    LX_ST_OP, // OP
+    LX_ST_ZZ_PUNCT, // PUNCT
+    LX_ST_ZZ_ERROR, // UNDER
+    LX_ST_YY_START, // WHITE
+  },
 };
 
 static tk_t (* lx_fn_table[LX_ST_COUNT])(char *, lx_st_t, i64) = {
-  lx_next__loop, // AA_COMMENT
-  lx_next__loop, // AA_START
-  lx_next__loop, // ID
-  lx_next__loop, // MINUS
-  lx_next__loop, // NUM
-  lx_next__loop, // OP
-  lx_next__eof, // ZZ_EOF
-  lx_next__error, // ZZ_ERROR
-  lx_next__id, // ZZ_ID
-  lx_next__num, // ZZ_NUM
-  lx_next__op, // ZZ_OP
-  lx_next__punct, // ZZ_PUNCT
+  [LX_ST_ID] = lx_next__loop,
+  [LX_ST_MINUS] = lx_next__loop,
+  [LX_ST_NUM] = lx_next__loop,
+  [LX_ST_OP] = lx_next__loop,
+  [LX_ST_YY_COMMENT] = lx_next__loop,
+  [LX_ST_YY_START] = lx_next__loop,
+  [LX_ST_ZZ_EOF] = lx_next__eof,
+  [LX_ST_ZZ_ERROR] = lx_next__error,
+  [LX_ST_ZZ_ID] = lx_next__id,
+  [LX_ST_ZZ_NUM] = lx_next__num,
+  [LX_ST_ZZ_OP] = lx_next__op,
+  [LX_ST_ZZ_PUNCT] = lx_next__punct,
 };

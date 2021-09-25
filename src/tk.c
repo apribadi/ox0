@@ -59,13 +59,7 @@ typedef struct {
 } tk_t;
 
 static inline tk_t tk_make(tk_tag_t tag, char * start, char * stop) {
-  tk_t t;
-
-  t.tag = tag;
-  t.start = start;
-  t.stop = stop;
-
-  return t;
+  return (tk_t) { .tag = tag, .start = start, .stop = stop };
 }
 
 static inline i64 tk_len(tk_t t) {
