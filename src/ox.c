@@ -10,7 +10,7 @@
 #include "vm.c"
 #include "io.c"
 #include "tk.c"
-#include "lx2.c"
+#include "lx.c"
 #include "cg.c"
 #include "test.c"
 
