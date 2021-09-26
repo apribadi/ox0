@@ -1,6 +1,6 @@
 // input and output
 
-static char * io_read(char const * path) {
+static char * io_read(char * path) {
   FILE * file = fopen(path, "rb");
   if (!file) panic("io_read: fopen failed!");
   fseek(file, 0, SEEK_END);

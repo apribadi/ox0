@@ -20,11 +20,10 @@ int main(int argc, const char * argv[]) {
     return 1;
   }
 
-  char * source = io_read(argv[1]);
+  char * filename = (char *) argv[1];
+  char * source = io_read(filename);
 
-  (void) source;
-
-  pa_t parser = pa_make(source);
+  pa_t parser = pa_make(filename, source);
 
   pa_expression(&parser);
 
