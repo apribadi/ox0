@@ -54,11 +54,9 @@ static void pa_report_error(pa_t * t, char * location, char * message) {
   }
 
   char * q = line_start;
-  char c = * q;
 
-  while (c != '\n' && c != '\0') {
-    ++ q;
-    c = * q;
+  while (* q != '\n' && * q != '\0') {
+    q ++;
   }
   
   i64 line_length = q - line_start;
@@ -85,8 +83,6 @@ static void pa_maybe_report_error(pa_t * t, char * location, char * message) {
 }
 
 static void pa_advance(pa_t * t) {
-  t->tok = t->lookahead;
-
   tk_t tok = t->lookahead;
   tk_t lookahead = lx_step(&t->lex);
 
@@ -101,7 +97,7 @@ static void pa_advance(pa_t * t) {
 
 static void pa_consume(pa_t * t, tk_tag_t tag) {
   if (t->lookahead.tag != tag) {
-    pa_maybe_report_error(t, t->lookahead.start, "not expected token");
+    pa_maybe_report_error(t, t->lookahead.start, "expected different token");
   };
 
   pa_advance(t);
@@ -193,7 +189,7 @@ static void pa_parse(pa_t * t, pa_precedence_t precedence) {
   pa_rule_t prefix_rule = pa_prefix_rule(t->lookahead.tag);
 
   if (!prefix_rule) {
-    pa_maybe_report_error(t, t->tok.start, "expected expression");
+    pa_maybe_report_error(t, t->lookahead.start, "expected expression");
     return;
   }
 
