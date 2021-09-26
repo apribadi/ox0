@@ -11,7 +11,6 @@ typedef struct {
 
 enum {
   PA_PRECEDENCE_NONE,
-  PA_PRECEDENCE_ASSIGNMENT,
   PA_PRECEDENCE_OR,
   PA_PRECEDENCE_AND,
   PA_PRECEDENCE_EQUALITY,
@@ -24,7 +23,13 @@ enum {
 
 typedef i64 pa_precedence_t;
 
-typedef void (* pa_rule_t) (pa_t *);
+// null denotation rule
+
+typedef void (* pa_nud_rule_t) (pa_t *);
+
+// left denotation rule
+
+typedef void (* pa_led_rule_t) (pa_t *);
 
 static pa_t pa_make(char * filename, char * source) {
   pa_t t;
@@ -121,11 +126,11 @@ static pa_precedence_t pa_precedence(tk_tag_t tag) {
 static void pa_parse(pa_t * t, i64 n);
 
 static void pa_expression(pa_t * t) {
-  pa_parse(t, PA_PRECEDENCE_ASSIGNMENT);
+  pa_parse(t, PA_PRECEDENCE_OR);
 }
 
 static void pa_grouping(pa_t * t) {
-  pa_advance(t); // consumes LPAREN
+  pa_advance(t);
   pa_expression(t);
   pa_consume(t, TK_RPAREN);
 }
@@ -138,6 +143,10 @@ static void pa_unary(pa_t * t) {
   switch (op.tag) {
     case TK_NEG: break;
   }
+}
+
+static void pa_nud_rule_error(pa_t * t) {
+  pa_maybe_report_error(t, t->lookahead.start, "expected expression");
 }
 
 static void pa_binary(pa_t * t) {
@@ -157,7 +166,7 @@ static void pa_number(pa_t * t) {
   pa_advance(t);
 }
 
-static pa_rule_t pa_prefix_rule(tk_tag_t tag) {
+static pa_nud_rule_t pa_nud_rule(tk_tag_t tag) {
   switch (tag) {
     case TK_LPAREN:
       return pa_grouping;
@@ -167,10 +176,10 @@ static pa_rule_t pa_prefix_rule(tk_tag_t tag) {
       return pa_number;
   }
 
-  return NULL;
+  return pa_nud_rule_error;
 }
 
-static pa_rule_t pa_infix_rule(tk_tag_t tag) {
+static pa_led_rule_t pa_led_rule(tk_tag_t tag) {
   switch (tag) {
     case TK_ADD:
       return pa_binary;
@@ -186,17 +195,9 @@ static pa_rule_t pa_infix_rule(tk_tag_t tag) {
 }
 
 static void pa_parse(pa_t * t, pa_precedence_t precedence) {
-  pa_rule_t prefix_rule = pa_prefix_rule(t->lookahead.tag);
-
-  if (!prefix_rule) {
-    pa_maybe_report_error(t, t->lookahead.start, "expected expression");
-    return;
-  }
-
-  prefix_rule(t);
+  pa_nud_rule(t->lookahead.tag)(t);;
 
   while (precedence <= pa_precedence(t->lookahead.tag)) {
-    pa_rule_t infix_rule = pa_infix_rule(t->lookahead.tag);
-    infix_rule(t);
+    pa_led_rule(t->lookahead.tag)(t);
   }
 }
