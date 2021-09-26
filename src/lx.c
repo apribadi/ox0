@@ -19,80 +19,79 @@ static inline lx_t lx_make(char * source) {
 // character class
 
 enum {
-  LX_CC_ALPHA,
-  LX_CC_DIGIT,
-  LX_CC_HASH,
-  LX_CC_ILLEGAL,
-  LX_CC_MINUS,
-  LX_CC_NEWLINE,
-  LX_CC_NULL,
-  LX_CC_OP,
-  LX_CC_PUNCT,
-  LX_CC_UNDER,
-  LX_CC_WHITE,
-  LX_CC_COUNT
+  LX_CLASS_ALPHA,
+  LX_CLASS_DIGIT,
+  LX_CLASS_HASH,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_MINUS,
+  LX_CLASS_NEWLINE,
+  LX_CLASS_NULL,
+  LX_CLASS_OP,
+  LX_CLASS_PUNCT,
+  LX_CLASS_WHITESPACE,
+  LX_CLASS_COUNT
 };
 
-typedef u8 lx_cc_t;
+typedef u8 lx_class_t;
 
 // lexer state
 
 enum {
-  LX_ST_ID,
-  LX_ST_MINUS,
-  LX_ST_NUMBER,
-  LX_ST_OP,
-  LX_ST_YY_COMMENT,
-  LX_ST_YY_START,
-  LX_ST_ZZ_EOF,
-  LX_ST_ZZ_ERROR,
-  LX_ST_ZZ_ID,
-  LX_ST_ZZ_NUMBER,
-  LX_ST_ZZ_OP,
-  LX_ST_ZZ_PUNCT,
-  LX_ST_COUNT,
+  LX_STATE_ID,
+  LX_STATE_MINUS,
+  LX_STATE_NUMBER,
+  LX_STATE_OP,
+  LX_STATE_YY_COMMENT,
+  LX_STATE_YY_START,
+  LX_STATE_ZZ_EOF,
+  LX_STATE_ZZ_ERROR,
+  LX_STATE_ZZ_ID,
+  LX_STATE_ZZ_NUMBER,
+  LX_STATE_ZZ_OP,
+  LX_STATE_ZZ_PUNCT,
+  LX_STATE_COUNT,
 };
 
-#define LX_ST_INCLUDED_COUNT 4
+#define LX_STATE_INCLUDED_COUNT 4
 
-typedef u8 lx_st_t;
+typedef u8 lx_state_t;
 
-static lx_cc_t lx_cc_table[];
+static lx_class_t lx_class_table[];
 
-static lx_st_t lx_tr_table[][LX_CC_COUNT];
+static lx_state_t lx_transition_table[][LX_CLASS_COUNT];
 
-static tk_t (* lx_fn_table[])(char *, lx_st_t, i64);
+static tk_t (* lx_jump_table[])(char *, lx_state_t, i64);
 
-static tk_t lx_step__loop(char * p, lx_st_t s, i64 n) {
-  n = n + (s < LX_ST_INCLUDED_COUNT);
-  s = lx_tr_table[s][lx_cc_table[(u8) * p]];
+static tk_t lx_step__loop(char * p, lx_state_t s, i64 n) {
+  n = n + (s < LX_STATE_INCLUDED_COUNT);
+  s = lx_transition_table[s][lx_class_table[(u8) * p]];
   p = p + 1;
 
-  return lx_fn_table[s](p, s, n);
+  return lx_jump_table[s](p, s, n);
 }
 
 static inline tk_t lx_step(lx_t * t) {
   char * p = t->pos;
-  tk_t r = lx_step__loop(p, LX_ST_YY_START, 0);
+  tk_t r = lx_step__loop(p, LX_STATE_YY_START, 0);
   t->pos = r.stop;
   return r;
 }
 
-static tk_t lx_step__eof(char * p, __attribute__((unused)) lx_st_t s, __attribute__((unused)) i64 n) {
+static tk_t lx_step__eof(char * p, __attribute__((unused)) lx_state_t s, __attribute__((unused)) i64 n) {
   char * start = p - 1;
   char * stop = p - 1;
 
   return tk_make(TK_EOF, start, stop);
 }
 
-static tk_t lx_step__error(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
+static tk_t lx_step__error(char * p, __attribute__((unused)) lx_state_t s, i64 n) {
   char * start = p - 1 - n;
   char * stop = p;
 
   return tk_make(TK_ERROR, start, stop);
 }
 
-static tk_t lx_step__id(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
+static tk_t lx_step__id(char * p, __attribute__((unused)) lx_state_t s, i64 n) {
   char * start = p - 1 - n;
   char * stop = p - 1;
 
@@ -100,8 +99,10 @@ static tk_t lx_step__id(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
     case 2:
       if (!bcmp(start, "do", 2)) return tk_make(TK_DO, start, stop);
       if (!bcmp(start, "if", 2)) return tk_make(TK_IF, start, stop);
+      if (!bcmp(start, "or", 2)) return tk_make(TK_OR, start, stop);
       break;
     case 3:
+      if (!bcmp(start, "and", 3)) return tk_make(TK_AND, start, stop);
       if (!bcmp(start, "end", 3)) return tk_make(TK_END, start, stop);
       if (!bcmp(start, "for", 3)) return tk_make(TK_FOR, start, stop);
       if (!bcmp(start, "fun", 3)) return tk_make(TK_FUN, start, stop);
@@ -121,21 +122,21 @@ static tk_t lx_step__id(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
   return tk_make(TK_ID, start, stop);
 }
 
-static tk_t lx_step__num(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
+static tk_t lx_step__number(char * p, __attribute__((unused)) lx_state_t s, i64 n) {
   char * start = p - 1 - n;
   char * stop = p - 1;
 
   return tk_make(TK_NUMBER, start, stop);
 }
 
-static tk_t lx_step__op(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
+static tk_t lx_step__op(char * p, __attribute__((unused)) lx_state_t s, i64 n) {
   char * start = p - 1 - n;
   char * stop = p - 1;
 
   switch (n) {
     case 1:
       switch (* start) {
-        case '=': return tk_make(TK_ASSIGN, start, stop);
+        case '=': return tk_make(TK_ASSIGNMENT, start, stop);
         case '+': return tk_make(TK_ADD, start, stop);
         case '-': return tk_make(TK_SUB, start, stop);
         case '*': return tk_make(TK_MUL, start, stop);
@@ -160,7 +161,7 @@ static tk_t lx_step__op(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
   return tk_make(TK_ERROR, start, stop);
 }
 
-static tk_t lx_step__punct(char * p, __attribute__((unused)) lx_st_t s, __attribute__((unused)) i64 n) {
+static tk_t lx_step__punct(char * p, __attribute__((unused)) lx_state_t s, __attribute__((unused)) i64 n) {
   char * start = p - 1;
   char * stop = p;
 
@@ -180,357 +181,351 @@ static tk_t lx_step__punct(char * p, __attribute__((unused)) lx_st_t s, __attrib
   return tk_make(TK_ERROR, start, stop);
 }
 
-static lx_cc_t lx_cc_table[] = {
-  LX_CC_NULL, // \0
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_WHITE, // \t
-  LX_CC_NEWLINE, // \n
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_WHITE, // ' '
-  LX_CC_OP, // !
-  LX_CC_ILLEGAL, // "
-  LX_CC_HASH, // #
-  LX_CC_OP, // $
-  LX_CC_OP, // %
-  LX_CC_OP, // &
-  LX_CC_ILLEGAL, // '
-  LX_CC_PUNCT, // (
-  LX_CC_PUNCT, // )
-  LX_CC_OP, // *
-  LX_CC_OP, // +
-  LX_CC_PUNCT, // ,
-  LX_CC_MINUS, // -
-  LX_CC_PUNCT, // .
-  LX_CC_OP, // /
-  LX_CC_DIGIT, // 0
-  LX_CC_DIGIT,
-  LX_CC_DIGIT,
-  LX_CC_DIGIT,
-  LX_CC_DIGIT,
-  LX_CC_DIGIT,
-  LX_CC_DIGIT,
-  LX_CC_DIGIT,
-  LX_CC_DIGIT,
-  LX_CC_DIGIT, // 9
-  LX_CC_PUNCT, // :
-  LX_CC_PUNCT, // ;
-  LX_CC_OP, // <
-  LX_CC_OP, // =
-  LX_CC_OP, // >
-  LX_CC_OP, // ?
-  LX_CC_OP, // @
-  LX_CC_ALPHA, // A
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA,
-  LX_CC_ALPHA, // Z
-  LX_CC_PUNCT, // [
-  LX_CC_ILLEGAL, // '\'
-  LX_CC_PUNCT, // ]
-  LX_CC_OP, // ^
-  LX_CC_UNDER, // _
-  LX_CC_ILLEGAL, // `
-  LX_CC_ALPHA, // a
-  LX_CC_ALPHA, // b
-  LX_CC_ALPHA, // c
-  LX_CC_ALPHA, // d
-  LX_CC_ALPHA, // e
-  LX_CC_ALPHA, // f
-  LX_CC_ALPHA, // g
-  LX_CC_ALPHA, // h
-  LX_CC_ALPHA, // i
-  LX_CC_ALPHA, // j
-  LX_CC_ALPHA, // k
-  LX_CC_ALPHA, // l
-  LX_CC_ALPHA, // m
-  LX_CC_ALPHA, // n
-  LX_CC_ALPHA, // o
-  LX_CC_ALPHA, // p
-  LX_CC_ALPHA, // q
-  LX_CC_ALPHA, // r
-  LX_CC_ALPHA, // s
-  LX_CC_ALPHA, // t
-  LX_CC_ALPHA, // u
-  LX_CC_ALPHA, // v
-  LX_CC_ALPHA, // w
-  LX_CC_ALPHA, // x
-  LX_CC_ALPHA, // y
-  LX_CC_ALPHA, // z
-  LX_CC_PUNCT, // {
-  LX_CC_OP, // |
-  LX_CC_PUNCT, // }
-  LX_CC_OP, // ~
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
-  LX_CC_ILLEGAL,
+static lx_class_t lx_class_table[] = {
+  LX_CLASS_NULL, // \0
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_WHITESPACE, // \t
+  LX_CLASS_NEWLINE, // \n
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_WHITESPACE, // ' '
+  LX_CLASS_OP, // !
+  LX_CLASS_ILLEGAL, // "
+  LX_CLASS_HASH, // #
+  LX_CLASS_OP, // $
+  LX_CLASS_OP, // %
+  LX_CLASS_OP, // &
+  LX_CLASS_ILLEGAL, // '
+  LX_CLASS_PUNCT, // (
+  LX_CLASS_PUNCT, // )
+  LX_CLASS_OP, // *
+  LX_CLASS_OP, // +
+  LX_CLASS_PUNCT, // ,
+  LX_CLASS_MINUS, // -
+  LX_CLASS_PUNCT, // .
+  LX_CLASS_OP, // /
+  LX_CLASS_DIGIT, // 0
+  LX_CLASS_DIGIT,
+  LX_CLASS_DIGIT,
+  LX_CLASS_DIGIT,
+  LX_CLASS_DIGIT,
+  LX_CLASS_DIGIT,
+  LX_CLASS_DIGIT,
+  LX_CLASS_DIGIT,
+  LX_CLASS_DIGIT,
+  LX_CLASS_DIGIT, // 9
+  LX_CLASS_PUNCT, // :
+  LX_CLASS_PUNCT, // ;
+  LX_CLASS_OP, // <
+  LX_CLASS_OP, // =
+  LX_CLASS_OP, // >
+  LX_CLASS_OP, // ?
+  LX_CLASS_OP, // @
+  LX_CLASS_ALPHA, // A
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA,
+  LX_CLASS_ALPHA, // Z
+  LX_CLASS_PUNCT, // [
+  LX_CLASS_ILLEGAL, // '\'
+  LX_CLASS_PUNCT, // ]
+  LX_CLASS_OP, // ^
+  LX_CLASS_ALPHA, // _
+  LX_CLASS_ILLEGAL, // `
+  LX_CLASS_ALPHA, // a
+  LX_CLASS_ALPHA, // b
+  LX_CLASS_ALPHA, // c
+  LX_CLASS_ALPHA, // d
+  LX_CLASS_ALPHA, // e
+  LX_CLASS_ALPHA, // f
+  LX_CLASS_ALPHA, // g
+  LX_CLASS_ALPHA, // h
+  LX_CLASS_ALPHA, // i
+  LX_CLASS_ALPHA, // j
+  LX_CLASS_ALPHA, // k
+  LX_CLASS_ALPHA, // l
+  LX_CLASS_ALPHA, // m
+  LX_CLASS_ALPHA, // n
+  LX_CLASS_ALPHA, // o
+  LX_CLASS_ALPHA, // p
+  LX_CLASS_ALPHA, // q
+  LX_CLASS_ALPHA, // r
+  LX_CLASS_ALPHA, // s
+  LX_CLASS_ALPHA, // t
+  LX_CLASS_ALPHA, // u
+  LX_CLASS_ALPHA, // v
+  LX_CLASS_ALPHA, // w
+  LX_CLASS_ALPHA, // x
+  LX_CLASS_ALPHA, // y
+  LX_CLASS_ALPHA, // z
+  LX_CLASS_PUNCT, // {
+  LX_CLASS_OP, // |
+  LX_CLASS_PUNCT, // }
+  LX_CLASS_OP, // ~
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL,
 };
 
-static lx_st_t lx_tr_table[][LX_CC_COUNT] = {
-  [LX_ST_ID] = {
-    LX_ST_ID, // ALPHA
-    LX_ST_ID, // DIGIT
-    LX_ST_ZZ_ID, // HASH
-    LX_ST_ZZ_ID, // ILLEGAL
-    LX_ST_ZZ_ID, // MINUS
-    LX_ST_ZZ_ID, // NEWLINE
-    LX_ST_ZZ_ID, // NULL
-    LX_ST_ZZ_ID, // OP
-    LX_ST_ZZ_ID, // PUNCT
-    LX_ST_ID, // UNDER
-    LX_ST_ZZ_ID, // WHITE
+static lx_state_t lx_transition_table[][LX_CLASS_COUNT] = {
+  [LX_STATE_ID] = {
+    LX_STATE_ID, // ALPHA
+    LX_STATE_ID, // DIGIT
+    LX_STATE_ZZ_ID, // HASH
+    LX_STATE_ZZ_ID, // ILLEGAL
+    LX_STATE_ZZ_ID, // MINUS
+    LX_STATE_ZZ_ID, // NEWLINE
+    LX_STATE_ZZ_ID, // NULL
+    LX_STATE_ZZ_ID, // OP
+    LX_STATE_ZZ_ID, // PUNCT
+    LX_STATE_ZZ_ID, // WHITESPACE
   },
-  [LX_ST_MINUS] = {
-    LX_ST_ZZ_OP, // ALPHA
-    LX_ST_NUMBER, // DIGIT
-    LX_ST_ZZ_OP, // HASH
-    LX_ST_ZZ_OP, // ILLEGAL
-    LX_ST_OP, // MINUS
-    LX_ST_ZZ_OP, // NEWLINE
-    LX_ST_ZZ_OP, // NULL
-    LX_ST_OP, // OP
-    LX_ST_ZZ_OP, // PUNCT
-    LX_ST_ZZ_OP, // UNDER
-    LX_ST_ZZ_OP, // WHITE
+  [LX_STATE_MINUS] = {
+    LX_STATE_ZZ_OP, // ALPHA
+    LX_STATE_NUMBER, // DIGIT
+    LX_STATE_ZZ_OP, // HASH
+    LX_STATE_ZZ_OP, // ILLEGAL
+    LX_STATE_OP, // MINUS
+    LX_STATE_ZZ_OP, // NEWLINE
+    LX_STATE_ZZ_OP, // NULL
+    LX_STATE_OP, // OP
+    LX_STATE_ZZ_OP, // PUNCT
+    LX_STATE_ZZ_OP, // WHITESPACE
   },
-  [LX_ST_NUMBER] = {
-    LX_ST_ZZ_NUMBER, // ALPHA
-    LX_ST_NUMBER, // DIGIT
-    LX_ST_ZZ_NUMBER, // HASH
-    LX_ST_ZZ_NUMBER, // ILLEGAL
-    LX_ST_ZZ_NUMBER, // MINUS
-    LX_ST_ZZ_NUMBER, // NEWLINE
-    LX_ST_ZZ_NUMBER, // NULL
-    LX_ST_ZZ_NUMBER, // OP
-    LX_ST_ZZ_NUMBER, // PUNCT
-    LX_ST_ZZ_NUMBER, // UNDER
-    LX_ST_ZZ_NUMBER, // WHITE
+  [LX_STATE_NUMBER] = {
+    LX_STATE_ZZ_NUMBER, // ALPHA
+    LX_STATE_NUMBER, // DIGIT
+    LX_STATE_ZZ_NUMBER, // HASH
+    LX_STATE_ZZ_NUMBER, // ILLEGAL
+    LX_STATE_ZZ_NUMBER, // MINUS
+    LX_STATE_ZZ_NUMBER, // NEWLINE
+    LX_STATE_ZZ_NUMBER, // NULL
+    LX_STATE_ZZ_NUMBER, // OP
+    LX_STATE_ZZ_NUMBER, // PUNCT
+    LX_STATE_ZZ_NUMBER, // WHITESPACE
   },
-  [LX_ST_OP] = {
-    LX_ST_ZZ_OP, // ALPHA
-    LX_ST_ZZ_OP, // DIGIT
-    LX_ST_ZZ_OP, // HASH
-    LX_ST_ZZ_OP, // ILLEGAL
-    LX_ST_OP, // MINUS
-    LX_ST_ZZ_OP, // NEWLINE
-    LX_ST_ZZ_OP, // NULL
-    LX_ST_OP, // OP
-    LX_ST_ZZ_OP, // PUNCT
-    LX_ST_ZZ_OP, // UNDER
-    LX_ST_ZZ_OP, // WHITE
+  [LX_STATE_OP] = {
+    LX_STATE_ZZ_OP, // ALPHA
+    LX_STATE_ZZ_OP, // DIGIT
+    LX_STATE_ZZ_OP, // HASH
+    LX_STATE_ZZ_OP, // ILLEGAL
+    LX_STATE_OP, // MINUS
+    LX_STATE_ZZ_OP, // NEWLINE
+    LX_STATE_ZZ_OP, // NULL
+    LX_STATE_OP, // OP
+    LX_STATE_ZZ_OP, // PUNCT
+    LX_STATE_ZZ_OP, // WHITESPACE
   },
-  [LX_ST_YY_COMMENT] = {
-    LX_ST_YY_COMMENT, // ALPHA
-    LX_ST_YY_COMMENT, // DIGIT
-    LX_ST_YY_COMMENT, // HASH
-    LX_ST_YY_COMMENT, // ILLEGAL
-    LX_ST_YY_COMMENT, // MINUS
-    LX_ST_YY_START, // NEWLINE
-    LX_ST_ZZ_EOF, // NULL
-    LX_ST_YY_COMMENT, // OP
-    LX_ST_YY_COMMENT, // PUNCT
-    LX_ST_YY_COMMENT, // UNDER
-    LX_ST_YY_COMMENT, // WHITE
+  [LX_STATE_YY_COMMENT] = {
+    LX_STATE_YY_COMMENT, // ALPHA
+    LX_STATE_YY_COMMENT, // DIGIT
+    LX_STATE_YY_COMMENT, // HASH
+    LX_STATE_YY_COMMENT, // ILLEGAL
+    LX_STATE_YY_COMMENT, // MINUS
+    LX_STATE_YY_START, // NEWLINE
+    LX_STATE_ZZ_EOF, // NULL
+    LX_STATE_YY_COMMENT, // OP
+    LX_STATE_YY_COMMENT, // PUNCT
+    LX_STATE_YY_COMMENT, // WHITESPACE
   },
-  [LX_ST_YY_START] = {
-    LX_ST_ID, // ALPHA
-    LX_ST_NUMBER, // DIGIT
-    LX_ST_YY_COMMENT, // HASH
-    LX_ST_ZZ_ERROR, // ILLEGAL
-    LX_ST_MINUS, // MINUS
-    LX_ST_YY_START, // NEWLINE
-    LX_ST_ZZ_EOF, // NULL
-    LX_ST_OP, // OP
-    LX_ST_ZZ_PUNCT, // PUNCT
-    LX_ST_ZZ_ERROR, // UNDER
-    LX_ST_YY_START, // WHITE
+  [LX_STATE_YY_START] = {
+    LX_STATE_ID, // ALPHA
+    LX_STATE_NUMBER, // DIGIT
+    LX_STATE_YY_COMMENT, // HASH
+    LX_STATE_ZZ_ERROR, // ILLEGAL
+    LX_STATE_MINUS, // MINUS
+    LX_STATE_YY_START, // NEWLINE
+    LX_STATE_ZZ_EOF, // NULL
+    LX_STATE_OP, // OP
+    LX_STATE_ZZ_PUNCT, // PUNCT
+    LX_STATE_YY_START, // WHITESPACE
   },
 };
 
-static tk_t (* lx_fn_table[LX_ST_COUNT])(char *, lx_st_t, i64) = {
-  [LX_ST_ID] = lx_step__loop,
-  [LX_ST_MINUS] = lx_step__loop,
-  [LX_ST_NUMBER] = lx_step__loop,
-  [LX_ST_OP] = lx_step__loop,
-  [LX_ST_YY_COMMENT] = lx_step__loop,
-  [LX_ST_YY_START] = lx_step__loop,
-  [LX_ST_ZZ_EOF] = lx_step__eof,
-  [LX_ST_ZZ_ERROR] = lx_step__error,
-  [LX_ST_ZZ_ID] = lx_step__id,
-  [LX_ST_ZZ_NUMBER] = lx_step__num,
-  [LX_ST_ZZ_OP] = lx_step__op,
-  [LX_ST_ZZ_PUNCT] = lx_step__punct,
+static tk_t (* lx_jump_table[LX_STATE_COUNT])(char *, lx_state_t, i64) = {
+  [LX_STATE_ID] = lx_step__loop,
+  [LX_STATE_MINUS] = lx_step__loop,
+  [LX_STATE_NUMBER] = lx_step__loop,
+  [LX_STATE_OP] = lx_step__loop,
+  [LX_STATE_YY_COMMENT] = lx_step__loop,
+  [LX_STATE_YY_START] = lx_step__loop,
+  [LX_STATE_ZZ_EOF] = lx_step__eof,
+  [LX_STATE_ZZ_ERROR] = lx_step__error,
+  [LX_STATE_ZZ_ID] = lx_step__id,
+  [LX_STATE_ZZ_NUMBER] = lx_step__number,
+  [LX_STATE_ZZ_OP] = lx_step__op,
+  [LX_STATE_ZZ_PUNCT] = lx_step__punct,
 };

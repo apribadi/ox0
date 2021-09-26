@@ -3,7 +3,7 @@
 enum {
   // punctuation
 
-  TK_ASSIGN,
+  TK_ASSIGNMENT,
   TK_COMMA,
   TK_DOT,
   TK_COLON,
@@ -31,6 +31,7 @@ enum {
 
   // keyword
 
+  TK_AND,
   TK_CASE,
   TK_DO,
   TK_ELIF,
@@ -40,6 +41,7 @@ enum {
   TK_FUN,
   TK_IF,
   TK_LET,
+  TK_OR,
   TK_THEN,
   TK_WHILE,
 
@@ -68,7 +70,7 @@ static inline i64 tk_len(tk_t t) {
 
 static char const * tk_name(tk_t t) {
   switch (t.tag) {
-    case TK_ASSIGN: return "ASSIGN";
+    case TK_ASSIGNMENT: return "ASSIGNMENT";
     case TK_COMMA: return "COMMA";
     case TK_DOT: return "DOT";
     case TK_COLON: return "COLON";
@@ -90,6 +92,7 @@ static char const * tk_name(tk_t t) {
     case TK_GT: return "GT";
     case TK_LE: return "LE";
     case TK_LT: return "LT";
+    case TK_AND: return "AND";
     case TK_CASE: return "CASE";
     case TK_DO: return "DO";
     case TK_ELIF: return "ELIF";
@@ -99,6 +102,7 @@ static char const * tk_name(tk_t t) {
     case TK_FUN: return "FUN";
     case TK_IF: return "IF";
     case TK_LET: return "LET";
+    case TK_OR: return "OR";
     case TK_THEN: return "THEN";
     case TK_WHILE: return "WHILE";
     case TK_ID: return "ID";
