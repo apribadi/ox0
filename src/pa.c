@@ -10,15 +10,19 @@ static pa_t pa_make(char * source) {
   pa_t t;
 
   t.lex = lx_make(source);
-  t.tok = lx_step(&t.lex);
+  // t.tok = ??;
   t.lookahead = lx_step(&t.lex);
 
   return t;
 }
 
 static void pa_advance(pa_t * t) {
+  printf("pa_advance\n");
+
   t->tok = t->lookahead;
   t->lookahead = lx_step(&t->lex);
+
+  tk_show(t->tok);
 }
 
 static void pa_consume(pa_t * t, tk_tag_t tag) {
@@ -47,6 +51,8 @@ typedef i64 pa_precedence_t;
 
 static void pa_parse_precedence(pa_t * t, i64 n);
 
+static pa_precedence_t pa_precedence(tk_tag_t);
+
 static void pa_expression(pa_t * t) {
   printf("pa_expression\n");
 
@@ -68,9 +74,7 @@ static void pa_unary(pa_t * t) {
   pa_parse_precedence(t, PA_PR_UNARY);
 
   switch (op.tag) {
-    case TK_NEG:
-      printf("neg\n");
-      break;
+    case TK_NEG: printf("NEG\n"); break;
   }
 }
 
@@ -79,11 +83,16 @@ static void pa_binary(pa_t * t) {
 
   tk_t op = t->tok;
 
-  pa_precedence_t
+  pa_precedence_t precedence = pa_precedence(op.tag);
 
+  pa_parse_precedence(t, precedence + 1);
 
-
-
+  switch (op.tag) {
+    case TK_ADD: printf("ADD\n"); break;
+    case TK_SUB: printf("SUB\n"); break;
+    case TK_MUL: printf("MUL\n"); break;
+    case TK_DIV: printf("DIV\n"); break;
+  }
 }
 
 static void pa_number(pa_t * t) {
@@ -145,7 +154,7 @@ static void pa_parse_precedence(pa_t * t, pa_precedence_t precedence) {
   pa_rule_t prefix_rule = pa_prefix_rule(t->tok.tag);
 
   if (!prefix_rule) {
-    panic("!!?");
+    panic("expected expression!");
     return;
   }
 

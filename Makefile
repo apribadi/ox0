@@ -10,5 +10,5 @@ bin/ox: src/*.c
 		-o bin/ox \
 		src/ox.c
 
-test: bin/ox test/foo.ox
-	./bin/ox test/foo.ox
+test: bin/ox test/exp.ox
+	./bin/ox test/exp.ox
