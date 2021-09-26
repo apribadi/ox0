@@ -4,16 +4,16 @@
 //
 // lx_t lx_make(char * source)
 //
-// tk_t lx_next(lx_t * t)
+// tk_t lx_step(lx_t * t)
 
 typedef struct {
-  char * next;
+  char * pos;
 } lx_t;
 
 // Source MUST be terminated by a '\0' character.
 
 static inline lx_t lx_make(char * source) {
-  return (lx_t) { .next = source };
+  return (lx_t) { .pos = source };
 }
 
 // character class
@@ -40,14 +40,14 @@ typedef u8 lx_cc_t;
 enum {
   LX_ST_ID,
   LX_ST_MINUS,
-  LX_ST_NUM,
+  LX_ST_NUMBER,
   LX_ST_OP,
   LX_ST_YY_COMMENT,
   LX_ST_YY_START,
   LX_ST_ZZ_EOF,
   LX_ST_ZZ_ERROR,
   LX_ST_ZZ_ID,
-  LX_ST_ZZ_NUM,
+  LX_ST_ZZ_NUMBER,
   LX_ST_ZZ_OP,
   LX_ST_ZZ_PUNCT,
   LX_ST_COUNT,
@@ -63,7 +63,7 @@ static lx_st_t lx_tr_table[][LX_CC_COUNT];
 
 static tk_t (* lx_fn_table[])(char *, lx_st_t, i64);
 
-static tk_t lx_next__loop(char * p, lx_st_t s, i64 n) {
+static tk_t lx_step__loop(char * p, lx_st_t s, i64 n) {
   n = n + (s < LX_ST_INCLUDED_COUNT);
   s = lx_tr_table[s][lx_cc_table[(u8) * p]];
   p = p + 1;
@@ -71,28 +71,28 @@ static tk_t lx_next__loop(char * p, lx_st_t s, i64 n) {
   return lx_fn_table[s](p, s, n);
 }
 
-static inline tk_t lx_next(lx_t * t) {
-  char * p = t->next;
-  tk_t r = lx_next__loop(p, LX_ST_YY_START, 0);
-  t->next = r.stop;
+static inline tk_t lx_step(lx_t * t) {
+  char * p = t->pos;
+  tk_t r = lx_step__loop(p, LX_ST_YY_START, 0);
+  t->pos = r.stop;
   return r;
 }
 
-static tk_t lx_next__eof(char * p, __attribute__((unused)) lx_st_t s, __attribute__((unused)) i64 n) {
+static tk_t lx_step__eof(char * p, __attribute__((unused)) lx_st_t s, __attribute__((unused)) i64 n) {
   char * start = p - 1;
   char * stop = p - 1;
 
   return tk_make(TK_EOF, start, stop);
 }
 
-static tk_t lx_next__error(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
+static tk_t lx_step__error(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
   char * start = p - 1 - n;
   char * stop = p;
 
   return tk_make(TK_ERROR, start, stop);
 }
 
-static tk_t lx_next__id(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
+static tk_t lx_step__id(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
   char * start = p - 1 - n;
   char * stop = p - 1;
 
@@ -121,14 +121,14 @@ static tk_t lx_next__id(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
   return tk_make(TK_ID, start, stop);
 }
 
-static tk_t lx_next__num(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
+static tk_t lx_step__num(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
   char * start = p - 1 - n;
   char * stop = p - 1;
 
-  return tk_make(TK_NUM, start, stop);
+  return tk_make(TK_NUMBER, start, stop);
 }
 
-static tk_t lx_next__op(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
+static tk_t lx_step__op(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
   char * start = p - 1 - n;
   char * stop = p - 1;
 
@@ -160,7 +160,7 @@ static tk_t lx_next__op(char * p, __attribute__((unused)) lx_st_t s, i64 n) {
   return tk_make(TK_ERROR, start, stop);
 }
 
-static tk_t lx_next__punct(char * p, __attribute__((unused)) lx_st_t s, __attribute__((unused)) i64 n) {
+static tk_t lx_step__punct(char * p, __attribute__((unused)) lx_st_t s, __attribute__((unused)) i64 n) {
   char * start = p - 1;
   char * stop = p;
 
@@ -455,7 +455,7 @@ static lx_st_t lx_tr_table[][LX_CC_COUNT] = {
   },
   [LX_ST_MINUS] = {
     LX_ST_ZZ_OP, // ALPHA
-    LX_ST_NUM, // DIGIT
+    LX_ST_NUMBER, // DIGIT
     LX_ST_ZZ_OP, // HASH
     LX_ST_ZZ_OP, // ILLEGAL
     LX_ST_OP, // MINUS
@@ -466,18 +466,18 @@ static lx_st_t lx_tr_table[][LX_CC_COUNT] = {
     LX_ST_ZZ_OP, // UNDER
     LX_ST_ZZ_OP, // WHITE
   },
-  [LX_ST_NUM] = {
-    LX_ST_ZZ_NUM, // ALPHA
-    LX_ST_NUM, // DIGIT
-    LX_ST_ZZ_NUM, // HASH
-    LX_ST_ZZ_NUM, // ILLEGAL
-    LX_ST_ZZ_NUM, // MINUS
-    LX_ST_ZZ_NUM, // NEWLINE
-    LX_ST_ZZ_NUM, // NULL
-    LX_ST_ZZ_NUM, // OP
-    LX_ST_ZZ_NUM, // PUNCT
-    LX_ST_ZZ_NUM, // UNDER
-    LX_ST_ZZ_NUM, // WHITE
+  [LX_ST_NUMBER] = {
+    LX_ST_ZZ_NUMBER, // ALPHA
+    LX_ST_NUMBER, // DIGIT
+    LX_ST_ZZ_NUMBER, // HASH
+    LX_ST_ZZ_NUMBER, // ILLEGAL
+    LX_ST_ZZ_NUMBER, // MINUS
+    LX_ST_ZZ_NUMBER, // NEWLINE
+    LX_ST_ZZ_NUMBER, // NULL
+    LX_ST_ZZ_NUMBER, // OP
+    LX_ST_ZZ_NUMBER, // PUNCT
+    LX_ST_ZZ_NUMBER, // UNDER
+    LX_ST_ZZ_NUMBER, // WHITE
   },
   [LX_ST_OP] = {
     LX_ST_ZZ_OP, // ALPHA
@@ -507,7 +507,7 @@ static lx_st_t lx_tr_table[][LX_CC_COUNT] = {
   },
   [LX_ST_YY_START] = {
     LX_ST_ID, // ALPHA
-    LX_ST_NUM, // DIGIT
+    LX_ST_NUMBER, // DIGIT
     LX_ST_YY_COMMENT, // HASH
     LX_ST_ZZ_ERROR, // ILLEGAL
     LX_ST_MINUS, // MINUS
@@ -521,16 +521,16 @@ static lx_st_t lx_tr_table[][LX_CC_COUNT] = {
 };
 
 static tk_t (* lx_fn_table[LX_ST_COUNT])(char *, lx_st_t, i64) = {
-  [LX_ST_ID] = lx_next__loop,
-  [LX_ST_MINUS] = lx_next__loop,
-  [LX_ST_NUM] = lx_next__loop,
-  [LX_ST_OP] = lx_next__loop,
-  [LX_ST_YY_COMMENT] = lx_next__loop,
-  [LX_ST_YY_START] = lx_next__loop,
-  [LX_ST_ZZ_EOF] = lx_next__eof,
-  [LX_ST_ZZ_ERROR] = lx_next__error,
-  [LX_ST_ZZ_ID] = lx_next__id,
-  [LX_ST_ZZ_NUM] = lx_next__num,
-  [LX_ST_ZZ_OP] = lx_next__op,
-  [LX_ST_ZZ_PUNCT] = lx_next__punct,
+  [LX_ST_ID] = lx_step__loop,
+  [LX_ST_MINUS] = lx_step__loop,
+  [LX_ST_NUMBER] = lx_step__loop,
+  [LX_ST_OP] = lx_step__loop,
+  [LX_ST_YY_COMMENT] = lx_step__loop,
+  [LX_ST_YY_START] = lx_step__loop,
+  [LX_ST_ZZ_EOF] = lx_step__eof,
+  [LX_ST_ZZ_ERROR] = lx_step__error,
+  [LX_ST_ZZ_ID] = lx_step__id,
+  [LX_ST_ZZ_NUMBER] = lx_step__num,
+  [LX_ST_ZZ_OP] = lx_step__op,
+  [LX_ST_ZZ_PUNCT] = lx_step__punct,
 };

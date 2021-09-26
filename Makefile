@@ -6,8 +6,9 @@ bin/ox: src/*.c
 		-Wall -Wextra -Werror \
 		-Wno-unused-function \
 		-O2 \
+		-fno-strict-aliasing \
 		-o bin/ox \
 		src/ox.c
 
-test: bin/ox test/foo.ox
-	./bin/ox test/foo.ox
+test: bin/ox test/exp.ox
+	./bin/ox test/exp.ox

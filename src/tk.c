@@ -44,7 +44,7 @@ enum {
   TK_WHILE,
 
   TK_ID,
-  TK_NUM,
+  TK_NUMBER,
 
   TK_EOF,
   TK_ERROR,
@@ -102,7 +102,7 @@ static char const * tk_name(tk_t t) {
     case TK_THEN: return "THEN";
     case TK_WHILE: return "WHILE";
     case TK_ID: return "ID";
-    case TK_NUM: return "NUM";
+    case TK_NUMBER: return "NUMBER";
     case TK_EOF: return "EOF";
     case TK_ERROR: return "ERROR";
   }
