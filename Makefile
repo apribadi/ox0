@@ -10,5 +10,7 @@ bin/ox: src/*.c
 		-o bin/ox \
 		src/ox.c
 
-test: bin/ox test/exp.ox
-	./bin/ox test/exp.ox
+test: bin/ox test/exp0.ox test/exp1.ox test/exp2.ox
+	./bin/ox test/exp0.ox
+	./bin/ox test/exp1.ox
+	./bin/ox test/exp2.ox

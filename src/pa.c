@@ -4,10 +4,27 @@ typedef struct {
   lx_t lex;
   tk_t tok;
   tk_t lookahead;
-  bool is_panicking;
+  bool is_error;
   char * filename;
   char * source;
 } pa_t;
+
+enum {
+  PA_PRECEDENCE_NONE,
+  PA_PRECEDENCE_ASSIGNMENT,
+  PA_PRECEDENCE_OR,
+  PA_PRECEDENCE_AND,
+  PA_PRECEDENCE_EQUALITY,
+  PA_PRECEDENCE_COMPARISON,
+  PA_PRECEDENCE_TERM,
+  PA_PRECEDENCE_FACTOR,
+  PA_PRECEDENCE_UNARY,
+  PA_PRECEDENCE_PRIMARY,
+};
+
+typedef i64 pa_precedence_t;
+
+typedef void (* pa_rule_t) (pa_t *);
 
 static pa_t pa_make(char * filename, char * source) {
   pa_t t;
@@ -15,16 +32,11 @@ static pa_t pa_make(char * filename, char * source) {
   t.lex = lx_make(source);
   // t.tok = ??;
   t.lookahead = lx_step(&t.lex);
-  t.is_panicking = false;
+  t.is_error = false;
   t.filename = filename;
   t.source = source;
 
   return t;
-}
-
-static void pa_advance(pa_t * t) {
-  t->tok = t->lookahead;
-  t->lookahead = lx_step(&t->lex);
 }
 
 static void pa_report_error(pa_t * t, char * location, char * message) {
@@ -67,33 +79,33 @@ static void pa_report_error(pa_t * t, char * location, char * message) {
 };
 
 static void pa_maybe_report_error(pa_t * t, char * location, char * message) {
-  if (!t->is_panicking) pa_report_error(t, location, message);
-  t->is_panicking = true;
+  if (t->is_error) return;
+  t->is_error = true;
+  pa_report_error(t, location, message);
+}
+
+static void pa_advance(pa_t * t) {
+  t->tok = t->lookahead;
+
+  tk_t tok = t->lookahead;
+  tk_t lookahead = lx_step(&t->lex);
+
+  while (lookahead.tag == TK_ERROR) {
+    pa_maybe_report_error(t, lookahead.start, "invalid token");
+    lookahead = lx_step(&t->lex);
+  }
+
+  t->tok = tok;
+  t->lookahead = lookahead;
 }
 
 static void pa_consume(pa_t * t, tk_tag_t tag) {
-  // TODO: real error handling
-
-  if (t->lookahead.tag != tag)
-    panic("pa_consume: tag mismatch!");
+  if (t->lookahead.tag != tag) {
+    pa_maybe_report_error(t, t->lookahead.start, "not expected token");
+  };
 
   pa_advance(t);
 }
-
-enum {
-  PA_PRECEDENCE_NONE,
-  PA_PRECEDENCE_ASSIGNMENT,
-  PA_PRECEDENCE_OR,
-  PA_PRECEDENCE_AND,
-  PA_PRECEDENCE_EQUALITY,
-  PA_PRECEDENCE_COMPARISON,
-  PA_PRECEDENCE_TERM,
-  PA_PRECEDENCE_FACTOR,
-  PA_PRECEDENCE_UNARY,
-  PA_PRECEDENCE_PRIMARY,
-};
-
-typedef i64 pa_precedence_t;
 
 static pa_precedence_t pa_precedence(tk_tag_t tag) {
   switch (tag) {
@@ -117,13 +129,14 @@ static void pa_expression(pa_t * t) {
 }
 
 static void pa_grouping(pa_t * t) {
+  pa_advance(t); // consumes LPAREN
   pa_expression(t);
   pa_consume(t, TK_RPAREN);
 }
 
 static void pa_unary(pa_t * t) {
+  pa_advance(t);
   tk_t op = t->tok;
-
   pa_parse(t, PA_PRECEDENCE_UNARY);
 
   switch (op.tag) {
@@ -132,11 +145,9 @@ static void pa_unary(pa_t * t) {
 }
 
 static void pa_binary(pa_t * t) {
+  pa_advance(t);
   tk_t op = t->tok;
-
-  pa_precedence_t precedence = pa_precedence(op.tag);
-
-  pa_parse(t, precedence + 1);
+  pa_parse(t, pa_precedence(op.tag) + 1);
 
   switch (op.tag) {
     case TK_ADD: break;
@@ -147,10 +158,8 @@ static void pa_binary(pa_t * t) {
 }
 
 static void pa_number(pa_t * t) {
-  (void) t;
+  pa_advance(t);
 }
-
-typedef void (* pa_rule_t) (pa_t *);
 
 static pa_rule_t pa_prefix_rule(tk_tag_t tag) {
   switch (tag) {
@@ -181,21 +190,17 @@ static pa_rule_t pa_infix_rule(tk_tag_t tag) {
 }
 
 static void pa_parse(pa_t * t, pa_precedence_t precedence) {
-  pa_advance(t);
-
-  pa_rule_t prefix_rule = pa_prefix_rule(t->tok.tag);
+  pa_rule_t prefix_rule = pa_prefix_rule(t->lookahead.tag);
 
   if (!prefix_rule) {
     pa_maybe_report_error(t, t->tok.start, "expected expression");
-    panic("parse error!");
     return;
   }
 
   prefix_rule(t);
 
   while (precedence <= pa_precedence(t->lookahead.tag)) {
-    pa_advance(t);
-    pa_rule_t infix_rule = pa_infix_rule(t->tok.tag);
+    pa_rule_t infix_rule = pa_infix_rule(t->lookahead.tag);
     infix_rule(t);
   }
 }
