@@ -10,26 +10,26 @@ typedef struct {
 } pa_t;
 
 enum {
-  PA_PRECEDENCE_NONE,
-  PA_PRECEDENCE_OR,
-  PA_PRECEDENCE_AND,
-  PA_PRECEDENCE_EQUALITY,
-  PA_PRECEDENCE_COMPARISON,
-  PA_PRECEDENCE_TERM,
-  PA_PRECEDENCE_FACTOR,
-  PA_PRECEDENCE_UNARY,
-  PA_PRECEDENCE_PRIMARY,
+  PA_BINDING_POWER_NONE,
+  PA_BINDING_POWER_OR,
+  PA_BINDING_POWER_AND,
+  PA_BINDING_POWER_EQUALITY,
+  PA_BINDING_POWER_COMPARISON,
+  PA_BINDING_POWER_TERM,
+  PA_BINDING_POWER_FACTOR,
+  PA_BINDING_POWER_UNARY,
+  PA_BINDING_POWER_PRIMARY,
 };
 
-typedef i64 pa_precedence_t;
+typedef i64 pa_binding_power_t;
 
 // null denotation rule
 
-typedef void (* pa_nud_rule_t) (pa_t *);
+typedef void (* pa_null_rule_t) (pa_t *);
 
 // left denotation rule
 
-typedef void (* pa_led_rule_t) (pa_t *);
+typedef void (* pa_left_rule_t) (pa_t *);
 
 static pa_t pa_make(char * filename, char * source) {
   pa_t t;
@@ -108,25 +108,25 @@ static void pa_consume(pa_t * t, tk_tag_t tag) {
   pa_advance(t);
 }
 
-static pa_precedence_t pa_precedence(tk_tag_t tag) {
+static pa_binding_power_t pa_left_binding_power(tk_tag_t tag) {
   switch (tag) {
     case TK_ADD:
-      return PA_PRECEDENCE_TERM;
+      return PA_BINDING_POWER_TERM;
     case TK_SUB:
-      return PA_PRECEDENCE_TERM;
+      return PA_BINDING_POWER_TERM;
     case TK_MUL:
-      return PA_PRECEDENCE_FACTOR;
+      return PA_BINDING_POWER_FACTOR;
     case TK_DIV:
-      return PA_PRECEDENCE_FACTOR;
+      return PA_BINDING_POWER_FACTOR;
   }
 
-  return PA_PRECEDENCE_NONE;
+  return PA_BINDING_POWER_NONE;
 }
 
 static void pa_parse(pa_t * t, i64 n);
 
 static void pa_expression(pa_t * t) {
-  pa_parse(t, PA_PRECEDENCE_OR);
+  pa_parse(t, PA_BINDING_POWER_OR);
 }
 
 static void pa_grouping(pa_t * t) {
@@ -138,21 +138,21 @@ static void pa_grouping(pa_t * t) {
 static void pa_unary(pa_t * t) {
   pa_advance(t);
   tk_t op = t->tok;
-  pa_parse(t, PA_PRECEDENCE_UNARY);
+  pa_parse(t, PA_BINDING_POWER_UNARY);
 
   switch (op.tag) {
     case TK_NEG: break;
   }
 }
 
-static void pa_nud_rule_error(pa_t * t) {
+static void pa_null_rule_error(pa_t * t) {
   pa_maybe_report_error(t, t->lookahead.start, "expected expression");
 }
 
 static void pa_binary(pa_t * t) {
   pa_advance(t);
   tk_t op = t->tok;
-  pa_parse(t, pa_precedence(op.tag) + 1);
+  pa_parse(t, pa_left_binding_power(op.tag));
 
   switch (op.tag) {
     case TK_ADD: break;
@@ -166,7 +166,7 @@ static void pa_number(pa_t * t) {
   pa_advance(t);
 }
 
-static pa_nud_rule_t pa_nud_rule(tk_tag_t tag) {
+static pa_null_rule_t pa_null_rule(tk_tag_t tag) {
   switch (tag) {
     case TK_LPAREN:
       return pa_grouping;
@@ -176,10 +176,10 @@ static pa_nud_rule_t pa_nud_rule(tk_tag_t tag) {
       return pa_number;
   }
 
-  return pa_nud_rule_error;
+  return pa_null_rule_error;
 }
 
-static pa_led_rule_t pa_led_rule(tk_tag_t tag) {
+static pa_left_rule_t pa_left_rule(tk_tag_t tag) {
   switch (tag) {
     case TK_ADD:
       return pa_binary;
@@ -194,10 +194,10 @@ static pa_led_rule_t pa_led_rule(tk_tag_t tag) {
   return NULL;
 }
 
-static void pa_parse(pa_t * t, pa_precedence_t precedence) {
-  pa_nud_rule(t->lookahead.tag)(t);;
+static void pa_parse(pa_t * t, pa_binding_power_t rbp) {
+  pa_null_rule(t->lookahead.tag)(t);;
 
-  while (precedence <= pa_precedence(t->lookahead.tag)) {
-    pa_led_rule(t->lookahead.tag)(t);
+  while (rbp < pa_left_binding_power(t->lookahead.tag)) {
+    pa_left_rule(t->lookahead.tag)(t);
   }
 }
