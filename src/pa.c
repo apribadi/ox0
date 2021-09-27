@@ -3,7 +3,6 @@
 typedef struct {
   lx_t lex;
   tk_t tok;
-  tk_t lookahead;
   bool is_error;
   char * filename;
   char * source;
@@ -11,23 +10,21 @@ typedef struct {
 
 enum {
   PA_BINDING_POWER_NONE,
-  PA_BINDING_POWER_OR,
-  PA_BINDING_POWER_AND,
-  PA_BINDING_POWER_EQUALITY,
-  PA_BINDING_POWER_COMPARISON,
-  PA_BINDING_POWER_TERM,
-  PA_BINDING_POWER_FACTOR,
-  PA_BINDING_POWER_UNARY,
+  PA_BINDING_POWER_ASSIGNMENT,
+  PA_BINDING_POWER_OR,         // right
+  PA_BINDING_POWER_AND,        // right
+  PA_BINDING_POWER_EQUALITY,   // left
+  PA_BINDING_POWER_COMPARISON, // left
+  PA_BINDING_POWER_TERM,       // left
+  PA_BINDING_POWER_FACTOR,     // left
+  PA_BINDING_POWER_PREFIX,
+  PA_BINDING_POWER_CALL,
   PA_BINDING_POWER_PRIMARY,
 };
 
 typedef i64 pa_binding_power_t;
 
-// null denotation rule
-
 typedef void (* pa_null_rule_t) (pa_t *);
-
-// left denotation rule
 
 typedef void (* pa_left_rule_t) (pa_t *);
 
@@ -35,8 +32,7 @@ static pa_t pa_make(char * filename, char * source) {
   pa_t t;
 
   t.lex = lx_make(source);
-  // t.tok = ??;
-  t.lookahead = lx_step(&t.lex);
+  t.tok = lx_step(&t.lex);
   t.is_error = false;
   t.filename = filename;
   t.source = source;
@@ -88,24 +84,95 @@ static void pa_maybe_report_error(pa_t * t, char * location, char * message) {
 }
 
 static void pa_advance(pa_t * t) {
-  tk_t tok = t->lookahead;
-  tk_t lookahead = lx_step(&t->lex);
+  tk_t tok = lx_step(&t->lex);
 
-  while (lookahead.tag == TK_ERROR) {
-    pa_maybe_report_error(t, lookahead.start, "invalid token");
-    lookahead = lx_step(&t->lex);
+  while (tok.tag == TK_ERROR) {
+    pa_maybe_report_error(t, tok.start, "invalid token");
+    tok = lx_step(&t->lex);
   }
 
   t->tok = tok;
-  t->lookahead = lookahead;
 }
 
 static void pa_consume(pa_t * t, tk_tag_t tag) {
-  if (t->lookahead.tag != tag) {
-    pa_maybe_report_error(t, t->lookahead.start, "expected different token");
+  if (t->tok.tag != tag) {
+    pa_maybe_report_error(t, t->tok.start, "not expected token");
   };
 
   pa_advance(t);
+}
+
+static void pa_parse(pa_t * t, i64 n);
+
+static void pa_expression(pa_t * t) {
+  pa_parse(t, PA_BINDING_POWER_NONE);
+}
+
+static void pa_grouping(pa_t * t) {
+  pa_advance(t);
+  pa_expression(t);
+  pa_consume(t, TK_RPAREN);
+}
+
+static void pa_neg(pa_t * t) {
+  pa_advance(t);
+  pa_parse(t, PA_BINDING_POWER_PREFIX);
+}
+
+static void pa_add(pa_t * t) {
+  pa_advance(t);
+  pa_parse(t, PA_BINDING_POWER_TERM);
+}
+
+static void pa_sub(pa_t * t) {
+  pa_advance(t);
+  pa_parse(t, PA_BINDING_POWER_TERM);
+}
+
+static void pa_mul(pa_t * t) {
+  pa_advance(t);
+  pa_parse(t, PA_BINDING_POWER_FACTOR);
+}
+
+static void pa_div(pa_t * t) {
+  pa_advance(t);
+  pa_parse(t, PA_BINDING_POWER_FACTOR);
+}
+
+static void pa_number(pa_t * t) {
+  pa_advance(t);
+}
+
+static void pa_null_rule_error(pa_t * t) {
+  pa_maybe_report_error(t, t->tok.start, "expected expression");
+}
+
+static pa_null_rule_t pa_null_rule(tk_tag_t tag) {
+  switch (tag) {
+    case TK_LPAREN:
+      return pa_grouping;
+    case TK_NEG:
+      return pa_neg;
+    case TK_NUMBER:
+      return pa_number;
+  }
+
+  return pa_null_rule_error;
+}
+
+static pa_left_rule_t pa_left_rule(tk_tag_t tag) {
+  switch (tag) {
+    case TK_ADD:
+      return pa_add;
+    case TK_SUB:
+      return pa_sub;
+    case TK_MUL:
+      return pa_mul;
+    case TK_DIV:
+      return pa_div;
+  }
+
+  return NULL;
 }
 
 static pa_binding_power_t pa_left_binding_power(tk_tag_t tag) {
@@ -123,81 +190,10 @@ static pa_binding_power_t pa_left_binding_power(tk_tag_t tag) {
   return PA_BINDING_POWER_NONE;
 }
 
-static void pa_parse(pa_t * t, i64 n);
+static void pa_parse(pa_t * t, pa_binding_power_t right_binding_power) {
+  pa_null_rule(t->tok.tag)(t);;
 
-static void pa_expression(pa_t * t) {
-  pa_parse(t, PA_BINDING_POWER_OR);
-}
-
-static void pa_grouping(pa_t * t) {
-  pa_advance(t);
-  pa_expression(t);
-  pa_consume(t, TK_RPAREN);
-}
-
-static void pa_unary(pa_t * t) {
-  pa_advance(t);
-  tk_t op = t->tok;
-  pa_parse(t, PA_BINDING_POWER_UNARY);
-
-  switch (op.tag) {
-    case TK_NEG: break;
-  }
-}
-
-static void pa_null_rule_error(pa_t * t) {
-  pa_maybe_report_error(t, t->lookahead.start, "expected expression");
-}
-
-static void pa_binary(pa_t * t) {
-  pa_advance(t);
-  tk_t op = t->tok;
-  pa_parse(t, pa_left_binding_power(op.tag));
-
-  switch (op.tag) {
-    case TK_ADD: break;
-    case TK_SUB: break;
-    case TK_MUL: break;
-    case TK_DIV: break;
-  }
-}
-
-static void pa_number(pa_t * t) {
-  pa_advance(t);
-}
-
-static pa_null_rule_t pa_null_rule(tk_tag_t tag) {
-  switch (tag) {
-    case TK_LPAREN:
-      return pa_grouping;
-    case TK_NEG:
-      return pa_unary;
-    case TK_NUMBER:
-      return pa_number;
-  }
-
-  return pa_null_rule_error;
-}
-
-static pa_left_rule_t pa_left_rule(tk_tag_t tag) {
-  switch (tag) {
-    case TK_ADD:
-      return pa_binary;
-    case TK_SUB:
-      return pa_binary;
-    case TK_MUL:
-      return pa_binary;
-    case TK_DIV:
-      return pa_binary;
-  }
-
-  return NULL;
-}
-
-static void pa_parse(pa_t * t, pa_binding_power_t rbp) {
-  pa_null_rule(t->lookahead.tag)(t);;
-
-  while (rbp < pa_left_binding_power(t->lookahead.tag)) {
-    pa_left_rule(t->lookahead.tag)(t);
+  while (right_binding_power < pa_left_binding_power(t->tok.tag)) {
+    pa_left_rule(t->tok.tag)(t);
   }
 }
