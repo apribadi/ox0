@@ -24,9 +24,11 @@ enum {
 
 typedef i64 pa_binding_power_t;
 
-typedef sx_t (* pa_null_rule_t) (pa_t *);
+typedef sx_t pa_result_t;
 
-typedef sx_t (* pa_left_rule_t) (pa_t *, sx_t);
+typedef pa_result_t (* pa_null_rule_t) (pa_t *);
+
+typedef pa_result_t (* pa_left_rule_t) (pa_t *, pa_result_t);
 
 static pa_t pa_make(char * filename, char * source) {
   pa_t t;
@@ -102,23 +104,23 @@ static void pa_consume(pa_t * t, tk_tag_t tag) {
   pa_advance(t);
 }
 
-static sx_t pa_parse(pa_t * t, i64 n);
+static pa_result_t pa_parse(pa_t * t, i64 n);
 
-static sx_t pa_expression(pa_t * t) {
+static pa_result_t pa_expression(pa_t * t) {
   return pa_parse(t, PA_BINDING_POWER_NONE);
 }
 
-static sx_t pa_grouping(pa_t * t) {
+static pa_result_t pa_grouping(pa_t * t) {
   pa_advance(t);
-  sx_t a = pa_expression(t);
+  pa_result_t a = pa_expression(t);
   pa_consume(t, TK_RPAREN);
 
   return a;
 }
 
-static sx_t pa_neg(pa_t * t) {
+static pa_result_t pa_neg(pa_t * t) {
   pa_advance(t);
-  sx_t a = pa_parse(t, PA_BINDING_POWER_PREFIX);
+  pa_result_t a = pa_parse(t, PA_BINDING_POWER_PREFIX);
 
   sx_t e = sx_make_list(2);
   e.as.list.data[0] = sx_make_atom(1, "-");
@@ -127,9 +129,9 @@ static sx_t pa_neg(pa_t * t) {
   return e;
 }
 
-static sx_t pa_add(pa_t * t, sx_t a) {
+static pa_result_t pa_add(pa_t * t, pa_result_t a) {
   pa_advance(t);
-  sx_t b = pa_parse(t, PA_BINDING_POWER_TERM);
+  pa_result_t b = pa_parse(t, PA_BINDING_POWER_TERM);
 
   sx_t e = sx_make_list(3);
   e.as.list.data[0] = sx_make_atom(1, "+");
@@ -139,9 +141,9 @@ static sx_t pa_add(pa_t * t, sx_t a) {
   return e;
 }
 
-static sx_t pa_sub(pa_t * t, sx_t a) {
+static pa_result_t pa_sub(pa_t * t, pa_result_t a) {
   pa_advance(t);
-  sx_t b = pa_parse(t, PA_BINDING_POWER_TERM);
+  pa_result_t b = pa_parse(t, PA_BINDING_POWER_TERM);
 
   sx_t e = sx_make_list(3);
   e.as.list.data[0] = sx_make_atom(1, "-");
@@ -151,9 +153,9 @@ static sx_t pa_sub(pa_t * t, sx_t a) {
   return e;
 }
 
-static sx_t pa_mul(pa_t * t, sx_t a) {
+static pa_result_t pa_mul(pa_t * t, pa_result_t a) {
   pa_advance(t);
-  sx_t b = pa_parse(t, PA_BINDING_POWER_FACTOR);
+  pa_result_t b = pa_parse(t, PA_BINDING_POWER_FACTOR);
 
   sx_t e = sx_make_list(3);
   e.as.list.data[0] = sx_make_atom(1, "*");
@@ -163,9 +165,9 @@ static sx_t pa_mul(pa_t * t, sx_t a) {
   return e;
 }
 
-static sx_t pa_div(pa_t * t, sx_t a) {
+static pa_result_t pa_div(pa_t * t, pa_result_t a) {
   pa_advance(t);
-  sx_t b = pa_parse(t, PA_BINDING_POWER_FACTOR);
+  pa_result_t b = pa_parse(t, PA_BINDING_POWER_FACTOR);
 
   sx_t e = sx_make_list(3);
   e.as.list.data[0] = sx_make_atom(1, "/");
@@ -175,7 +177,7 @@ static sx_t pa_div(pa_t * t, sx_t a) {
   return e;
 }
 
-static sx_t pa_number(pa_t * t) {
+static pa_result_t pa_number(pa_t * t) {
   sx_t e = sx_make_atom(t->tok.stop - t->tok.start, t->tok.start);
 
   pa_advance(t);
@@ -183,7 +185,7 @@ static sx_t pa_number(pa_t * t) {
   return e;
 }
 
-static sx_t pa_null_rule_error(pa_t * t) {
+static pa_result_t pa_null_rule_error(pa_t * t) {
   pa_maybe_report_error(t, t->tok.start, "expected expression");
 
   return sx_make_atom(5, "ERROR");
@@ -232,8 +234,8 @@ static pa_binding_power_t pa_left_binding_power(tk_tag_t tag) {
   return PA_BINDING_POWER_NONE;
 }
 
-static sx_t pa_parse(pa_t * t, pa_binding_power_t right_binding_power) {
-  sx_t e;
+static pa_result_t pa_parse(pa_t * t, pa_binding_power_t right_binding_power) {
+  pa_result_t e;
 
   e = pa_null_rule(t->tok.tag)(t);;
 
