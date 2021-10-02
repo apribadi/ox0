@@ -6,13 +6,13 @@
 
 #include "util.c"
 #include "mm.c"
+#include "sx.c"
 #include "bc.c"
 #include "vm.c"
 #include "io.c"
 #include "tk.c"
 #include "lx.c"
 #include "pa.c"
-#include "sx.c"
 #include "test.c"
 
 int main(int argc, const char * argv[]) {
@@ -26,7 +26,9 @@ int main(int argc, const char * argv[]) {
 
   pa_t parser = pa_make(filename, source);
 
-  pa_expression(&parser);
+  sx_t e = pa_expression(&parser);
+
+  sx_show(e);
 
   /*
   lx_t lex = lx_make(source);

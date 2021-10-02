@@ -42,7 +42,7 @@ static inline sx_t sx_make_list(i64 len) {
   return t;
 };
 
-static void sx_show(sx_t t) {
+static void sx_show_work(sx_t t) {
   switch (t.tag) {
     case SX_TAG_ATOM:
       printf("%.*s", (int) t.as.atom.len, t.as.atom.data);
@@ -52,9 +52,15 @@ static void sx_show(sx_t t) {
       printf("(");
       i64 n = t.as.list.len;
       for (i64 i = 0; i < n; i ++) {
-        sx_show(t.as.list.data[i]);
+        sx_show_work(t.as.list.data[i]);
+        if (i + 1 != n) { printf(" "); }
       }
       printf(")");
       break;
   }
 };
+
+static void sx_show(sx_t t) {
+  sx_show_work(t);
+  printf("\n");
+}
