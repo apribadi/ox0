@@ -3,7 +3,7 @@
 typedef struct {
   lx_t lex;
   tk_t tok;
-  bool is_error;
+  bool is_panicking;
   char * filename;
   char * source;
 } pa_t;
@@ -35,7 +35,7 @@ static pa_t pa_make(char * filename, char * source) {
 
   t.lex = lx_make(source);
   t.tok = lx_step(&t.lex);
-  t.is_error = false;
+  t.is_panicking = false;
   t.filename = filename;
   t.source = source;
 
@@ -80,8 +80,8 @@ static void pa_report_error(pa_t * t, char * location, char * message) {
 };
 
 static void pa_maybe_report_error(pa_t * t, char * location, char * message) {
-  if (t->is_error) return;
-  t->is_error = true;
+  if (t->is_panicking) return;
+  t->is_panicking = true;
   pa_report_error(t, location, message);
 }
 
