@@ -12,6 +12,7 @@
 #include "tk.c"
 #include "lx.c"
 #include "pa.c"
+#include "sx.c"
 #include "test.c"
 
 int main(int argc, const char * argv[]) {

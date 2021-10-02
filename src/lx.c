@@ -41,14 +41,14 @@ enum {
   LX_STATE_MINUS,
   LX_STATE_NUMBER,
   LX_STATE_OP,
-  LX_STATE_YY_COMMENT,
-  LX_STATE_YY_START,
-  LX_STATE_ZZ_EOF,
-  LX_STATE_ZZ_ERROR,
-  LX_STATE_ZZ_ID,
-  LX_STATE_ZZ_NUMBER,
-  LX_STATE_ZZ_OP,
-  LX_STATE_ZZ_PUNCT,
+  LX_STATE_Y_COMMENT,
+  LX_STATE_Y_START,
+  LX_STATE_Z_EOF,
+  LX_STATE_Z_ERROR,
+  LX_STATE_Z_ID,
+  LX_STATE_Z_NUMBER,
+  LX_STATE_Z_OP,
+  LX_STATE_Z_PUNCT,
   LX_STATE_COUNT,
 };
 
@@ -72,7 +72,7 @@ static tk_t lx_step__loop(char * p, lx_state_t s, i64 n) {
 
 static inline tk_t lx_step(lx_t * t) {
   char * p = t->pos;
-  tk_t r = lx_step__loop(p, LX_STATE_YY_START, 0);
+  tk_t r = lx_step__loop(p, LX_STATE_Y_START, 0);
   t->pos = r.stop;
   return r;
 }
@@ -444,74 +444,74 @@ static lx_state_t lx_transition_table[][LX_CLASS_COUNT] = {
   [LX_STATE_ID] = {
     LX_STATE_ID, // ALPHA
     LX_STATE_ID, // DIGIT
-    LX_STATE_ZZ_ID, // HASH
-    LX_STATE_ZZ_ID, // ILLEGAL
-    LX_STATE_ZZ_ID, // MINUS
-    LX_STATE_ZZ_ID, // NEWLINE
-    LX_STATE_ZZ_ID, // NULL
-    LX_STATE_ZZ_ID, // OP
-    LX_STATE_ZZ_ID, // PUNCT
-    LX_STATE_ZZ_ID, // WHITESPACE
+    LX_STATE_Z_ID, // HASH
+    LX_STATE_Z_ID, // ILLEGAL
+    LX_STATE_Z_ID, // MINUS
+    LX_STATE_Z_ID, // NEWLINE
+    LX_STATE_Z_ID, // NULL
+    LX_STATE_Z_ID, // OP
+    LX_STATE_Z_ID, // PUNCT
+    LX_STATE_Z_ID, // WHITESPACE
   },
   [LX_STATE_MINUS] = {
-    LX_STATE_ZZ_OP, // ALPHA
+    LX_STATE_Z_OP, // ALPHA
     LX_STATE_NUMBER, // DIGIT
-    LX_STATE_ZZ_OP, // HASH
-    LX_STATE_ZZ_OP, // ILLEGAL
+    LX_STATE_Z_OP, // HASH
+    LX_STATE_Z_OP, // ILLEGAL
     LX_STATE_OP, // MINUS
-    LX_STATE_ZZ_OP, // NEWLINE
-    LX_STATE_ZZ_OP, // NULL
+    LX_STATE_Z_OP, // NEWLINE
+    LX_STATE_Z_OP, // NULL
     LX_STATE_OP, // OP
-    LX_STATE_ZZ_OP, // PUNCT
-    LX_STATE_ZZ_OP, // WHITESPACE
+    LX_STATE_Z_OP, // PUNCT
+    LX_STATE_Z_OP, // WHITESPACE
   },
   [LX_STATE_NUMBER] = {
-    LX_STATE_ZZ_NUMBER, // ALPHA
+    LX_STATE_Z_NUMBER, // ALPHA
     LX_STATE_NUMBER, // DIGIT
-    LX_STATE_ZZ_NUMBER, // HASH
-    LX_STATE_ZZ_NUMBER, // ILLEGAL
-    LX_STATE_ZZ_NUMBER, // MINUS
-    LX_STATE_ZZ_NUMBER, // NEWLINE
-    LX_STATE_ZZ_NUMBER, // NULL
-    LX_STATE_ZZ_NUMBER, // OP
-    LX_STATE_ZZ_NUMBER, // PUNCT
-    LX_STATE_ZZ_NUMBER, // WHITESPACE
+    LX_STATE_Z_NUMBER, // HASH
+    LX_STATE_Z_NUMBER, // ILLEGAL
+    LX_STATE_Z_NUMBER, // MINUS
+    LX_STATE_Z_NUMBER, // NEWLINE
+    LX_STATE_Z_NUMBER, // NULL
+    LX_STATE_Z_NUMBER, // OP
+    LX_STATE_Z_NUMBER, // PUNCT
+    LX_STATE_Z_NUMBER, // WHITESPACE
   },
   [LX_STATE_OP] = {
-    LX_STATE_ZZ_OP, // ALPHA
-    LX_STATE_ZZ_OP, // DIGIT
-    LX_STATE_ZZ_OP, // HASH
-    LX_STATE_ZZ_OP, // ILLEGAL
+    LX_STATE_Z_OP, // ALPHA
+    LX_STATE_Z_OP, // DIGIT
+    LX_STATE_Z_OP, // HASH
+    LX_STATE_Z_OP, // ILLEGAL
     LX_STATE_OP, // MINUS
-    LX_STATE_ZZ_OP, // NEWLINE
-    LX_STATE_ZZ_OP, // NULL
+    LX_STATE_Z_OP, // NEWLINE
+    LX_STATE_Z_OP, // NULL
     LX_STATE_OP, // OP
-    LX_STATE_ZZ_OP, // PUNCT
-    LX_STATE_ZZ_OP, // WHITESPACE
+    LX_STATE_Z_OP, // PUNCT
+    LX_STATE_Z_OP, // WHITESPACE
   },
-  [LX_STATE_YY_COMMENT] = {
-    LX_STATE_YY_COMMENT, // ALPHA
-    LX_STATE_YY_COMMENT, // DIGIT
-    LX_STATE_YY_COMMENT, // HASH
-    LX_STATE_YY_COMMENT, // ILLEGAL
-    LX_STATE_YY_COMMENT, // MINUS
-    LX_STATE_YY_START, // NEWLINE
-    LX_STATE_ZZ_EOF, // NULL
-    LX_STATE_YY_COMMENT, // OP
-    LX_STATE_YY_COMMENT, // PUNCT
-    LX_STATE_YY_COMMENT, // WHITESPACE
+  [LX_STATE_Y_COMMENT] = {
+    LX_STATE_Y_COMMENT, // ALPHA
+    LX_STATE_Y_COMMENT, // DIGIT
+    LX_STATE_Y_COMMENT, // HASH
+    LX_STATE_Y_COMMENT, // ILLEGAL
+    LX_STATE_Y_COMMENT, // MINUS
+    LX_STATE_Y_START, // NEWLINE
+    LX_STATE_Z_EOF, // NULL
+    LX_STATE_Y_COMMENT, // OP
+    LX_STATE_Y_COMMENT, // PUNCT
+    LX_STATE_Y_COMMENT, // WHITESPACE
   },
-  [LX_STATE_YY_START] = {
+  [LX_STATE_Y_START] = {
     LX_STATE_ID, // ALPHA
     LX_STATE_NUMBER, // DIGIT
-    LX_STATE_YY_COMMENT, // HASH
-    LX_STATE_ZZ_ERROR, // ILLEGAL
+    LX_STATE_Y_COMMENT, // HASH
+    LX_STATE_Z_ERROR, // ILLEGAL
     LX_STATE_MINUS, // MINUS
-    LX_STATE_YY_START, // NEWLINE
-    LX_STATE_ZZ_EOF, // NULL
+    LX_STATE_Y_START, // NEWLINE
+    LX_STATE_Z_EOF, // NULL
     LX_STATE_OP, // OP
-    LX_STATE_ZZ_PUNCT, // PUNCT
-    LX_STATE_YY_START, // WHITESPACE
+    LX_STATE_Z_PUNCT, // PUNCT
+    LX_STATE_Y_START, // WHITESPACE
   },
 };
 
@@ -520,12 +520,12 @@ static tk_t (* lx_jump_table[LX_STATE_COUNT])(char *, lx_state_t, i64) = {
   [LX_STATE_MINUS] = lx_step__loop,
   [LX_STATE_NUMBER] = lx_step__loop,
   [LX_STATE_OP] = lx_step__loop,
-  [LX_STATE_YY_COMMENT] = lx_step__loop,
-  [LX_STATE_YY_START] = lx_step__loop,
-  [LX_STATE_ZZ_EOF] = lx_step__eof,
-  [LX_STATE_ZZ_ERROR] = lx_step__error,
-  [LX_STATE_ZZ_ID] = lx_step__id,
-  [LX_STATE_ZZ_NUMBER] = lx_step__number,
-  [LX_STATE_ZZ_OP] = lx_step__op,
-  [LX_STATE_ZZ_PUNCT] = lx_step__punct,
+  [LX_STATE_Y_COMMENT] = lx_step__loop,
+  [LX_STATE_Y_START] = lx_step__loop,
+  [LX_STATE_Z_EOF] = lx_step__eof,
+  [LX_STATE_Z_ERROR] = lx_step__error,
+  [LX_STATE_Z_ID] = lx_step__id,
+  [LX_STATE_Z_NUMBER] = lx_step__number,
+  [LX_STATE_Z_OP] = lx_step__op,
+  [LX_STATE_Z_PUNCT] = lx_step__punct,
 };
