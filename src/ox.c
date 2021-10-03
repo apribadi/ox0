@@ -25,7 +25,8 @@ int main(int argc, const char * argv[]) {
   char * filename = (char *) argv[1];
   char * source = io_read(filename);
 
-  pa_t parser = pa_make(filename, source);
+  aa_t arena = aa_make();
+  pa_t parser = pa_make(filename, source, &arena);
 
   sx_t e = pa_expression(&parser);
 

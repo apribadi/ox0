@@ -26,12 +26,12 @@ static inline sx_t sx_make_atom(i64 len, char * data) {
   return t;
 };
 
-static inline sx_t sx_make_list(i64 len) {
+static inline sx_t sx_make_list(aa_t * arena, i64 len) {
   sx_t t;
 
   t.tag = SX_TAG_LIST;
   t.as.list.len = len;
-  t.as.list.data = mm_alloc(sizeof(sx_t) * len);
+  t.as.list.data = aa_alloc(arena, sizeof(sx_t) * len);
 
   return t;
 };

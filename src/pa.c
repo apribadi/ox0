@@ -1,8 +1,9 @@
 // parsing
 
 typedef struct {
-  lx_t lex;
-  tk_t tok;
+  lx_t lexer;
+  tk_t token;
+  aa_t * arena;
   bool is_panicking;
   char * filename;
   char * source;
@@ -30,11 +31,12 @@ typedef pa_result_t (* pa_null_rule_t) (pa_t *);
 
 typedef pa_result_t (* pa_left_rule_t) (pa_t *, pa_result_t);
 
-static pa_t pa_make(char * filename, char * source) {
+static pa_t pa_make(char * filename, char * source, aa_t * arena) {
   pa_t t;
 
-  t.lex = lx_make(source);
-  t.tok = lx_step(&t.lex);
+  t.lexer = lx_make(source);
+  t.token = lx_step(&t.lexer);
+  t.arena = arena;
   t.is_panicking = false;
   t.filename = filename;
   t.source = source;
@@ -86,19 +88,19 @@ static void pa_maybe_report_error(pa_t * t, char * location, char * message) {
 }
 
 static void pa_advance(pa_t * t) {
-  tk_t tok = lx_step(&t->lex);
+  tk_t token = lx_step(&t->lexer);
 
-  while (tok.tag == TK_ERROR) {
-    pa_maybe_report_error(t, tok.start, "invalid token");
-    tok = lx_step(&t->lex);
+  while (token.tag == TK_ERROR) {
+    pa_maybe_report_error(t, token.start, "invalid token");
+    token = lx_step(&t->lexer);
   }
 
-  t->tok = tok;
+  t->token = token;
 }
 
 static void pa_consume(pa_t * t, tk_tag_t tag) {
-  if (t->tok.tag != tag) {
-    pa_maybe_report_error(t, t->tok.start, "not expected token");
+  if (t->token.tag != tag) {
+    pa_maybe_report_error(t, t->token.start, "not expected token");
   };
 
   pa_advance(t);
@@ -122,7 +124,7 @@ static pa_result_t pa_neg(pa_t * t) {
   pa_advance(t);
   pa_result_t a = pa_parse(t, PA_BINDING_POWER_PREFIX);
 
-  sx_t e = sx_make_list(2);
+  sx_t e = sx_make_list(t->arena, 2);
   e.as.list.data[0] = sx_make_atom(1, "-");
   e.as.list.data[1] = a;
 
@@ -133,7 +135,7 @@ static pa_result_t pa_add(pa_t * t, pa_result_t a) {
   pa_advance(t);
   pa_result_t b = pa_parse(t, PA_BINDING_POWER_TERM);
 
-  sx_t e = sx_make_list(3);
+  sx_t e = sx_make_list(t->arena, 3);
   e.as.list.data[0] = sx_make_atom(1, "+");
   e.as.list.data[1] = a;
   e.as.list.data[2] = b;
@@ -145,7 +147,7 @@ static pa_result_t pa_sub(pa_t * t, pa_result_t a) {
   pa_advance(t);
   pa_result_t b = pa_parse(t, PA_BINDING_POWER_TERM);
 
-  sx_t e = sx_make_list(3);
+  sx_t e = sx_make_list(t->arena, 3);
   e.as.list.data[0] = sx_make_atom(1, "-");
   e.as.list.data[1] = a;
   e.as.list.data[2] = b;
@@ -157,7 +159,7 @@ static pa_result_t pa_mul(pa_t * t, pa_result_t a) {
   pa_advance(t);
   pa_result_t b = pa_parse(t, PA_BINDING_POWER_FACTOR);
 
-  sx_t e = sx_make_list(3);
+  sx_t e = sx_make_list(t->arena, 3);
   e.as.list.data[0] = sx_make_atom(1, "*");
   e.as.list.data[1] = a;
   e.as.list.data[2] = b;
@@ -169,7 +171,7 @@ static pa_result_t pa_div(pa_t * t, pa_result_t a) {
   pa_advance(t);
   pa_result_t b = pa_parse(t, PA_BINDING_POWER_FACTOR);
 
-  sx_t e = sx_make_list(3);
+  sx_t e = sx_make_list(t->arena, 3);
   e.as.list.data[0] = sx_make_atom(1, "/");
   e.as.list.data[1] = a;
   e.as.list.data[2] = b;
@@ -178,7 +180,7 @@ static pa_result_t pa_div(pa_t * t, pa_result_t a) {
 }
 
 static pa_result_t pa_number(pa_t * t) {
-  sx_t e = sx_make_atom(t->tok.stop - t->tok.start, t->tok.start);
+  sx_t e = sx_make_atom(t->token.stop - t->token.start, t->token.start);
 
   pa_advance(t);
 
@@ -186,7 +188,7 @@ static pa_result_t pa_number(pa_t * t) {
 }
 
 static pa_result_t pa_null_rule_error(pa_t * t) {
-  pa_maybe_report_error(t, t->tok.start, "expected expression");
+  pa_maybe_report_error(t, t->token.start, "expected expression");
 
   return sx_make_atom(5, "ERROR");
 }
@@ -237,10 +239,10 @@ static pa_binding_power_t pa_left_binding_power(tk_tag_t tag) {
 static pa_result_t pa_parse(pa_t * t, pa_binding_power_t right_binding_power) {
   pa_result_t e;
 
-  e = pa_null_rule(t->tok.tag)(t);;
+  e = pa_null_rule(t->token.tag)(t);;
 
-  while (right_binding_power < pa_left_binding_power(t->tok.tag)) {
-    e = pa_left_rule(t->tok.tag)(t, e);
+  while (right_binding_power < pa_left_binding_power(t->token.tag)) {
+    e = pa_left_rule(t->token.tag)(t, e);
   }
 
   return e;
