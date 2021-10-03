@@ -1,71 +1,78 @@
 // arena allocator
 
+#define AA_MAX_NUM_CHUNKS 30
+#define AA_MIN_CHUNK_SIZE_LOG2 12
+
 typedef struct {
-  char * start;
-  char * stop;
-  i64 chunk_index_start;
-  i64 chunk_index_stop;
-  char * chunks[36];
+  i64 chunk_capacity;
+  char * chunk;
+  i64 num_chunks_skipped;
+  i64 num_chunks;
+  char * chunks[AA_MAX_NUM_CHUNKS];
 } aa_t;
 
 static inline aa_t aa_make(void) {
   aa_t t;
 
-  t.start = NULL;
-  t.stop = NULL;
-  t.chunk_index_start = 0;
-  t.chunk_index_stop = 0;
-  for (i64 i = 0; i < 36; i ++) t.chunks[i] = NULL;
+  t.chunk_capacity = 0;
+  t.chunk = NULL;
+  t.num_chunks_skipped = 0;
+  t.num_chunks = 0;
+  for (i64 i = 0; i < AA_MAX_NUM_CHUNKS; i ++) t.chunks[i] = NULL;
 
   return t;
 }
 
-static void * aa_alloc_slow_path(aa_t *, i64);
+static void * aa_alloc_slow(aa_t *, i64);
 
 static inline void * aa_alloc(aa_t * t, i64 n) {
-  char * start = t->start;
-  char * stop = t->stop;
-  if ((u64) (stop - start) < (u64) n) return aa_alloc_slow_path(t, n);
-  start = start + ((-n) & ~7);
-  t->start = start;
-  return start;
+  i64 old_chunk_capacity = t->chunk_capacity;
+  if ((u64) old_chunk_capacity < (u64) n) return aa_alloc_slow(t, n);
+  i64 new_chunk_capacity = (old_chunk_capacity - n) & ~7;
+  t->chunk_capacity = new_chunk_capacity;
+  return t->chunk + new_chunk_capacity;
 }
 
 __attribute__((noinline))
-static void * aa_alloc_slow_path(aa_t * t, i64 n) {
-  if (n < 0) panic("aa_alloc: negative allocation size!");
+static void * aa_alloc_slow(aa_t * t, i64 n) {
+  i64 num_chunks_skipped = t->num_chunks_skipped;
+  i64 num_chunks = t->num_chunks;
+  i64 chunk_index = num_chunks_skipped + num_chunks;
+  i64 chunk_size = (i64) 1 << (AA_MIN_CHUNK_SIZE_LOG2 + chunk_index);
 
-  i64 k = t->chunk_index_stop;
-  u64 m = 1ull << (12 + k);
+  if (n < 0) panic("aa_alloc: negative size!");
+  if (chunk_index >= AA_MAX_NUM_CHUNKS) panic("aa_alloc: too many chunks!");
 
-  char * start = malloc(m);
-  if (!start) panic("aa_alloc: malloc failed!");
+  char * chunk = malloc(chunk_size);
 
-  t->start = start;
-  t->stop = start + m;
-  t->chunk_index_stop = k + 1;
-  t->chunks[k] = start;
+  if (!chunk) panic("aa_alloc: malloc failed!");
+
+  t->chunk_capacity = chunk_size;
+  t->chunk = chunk;
+  t->num_chunks = num_chunks + 1;
+  t->chunks[chunk_index] = chunk;
 
   return aa_alloc(t, n);
 }
 
 static void aa_clear(aa_t * t) {
-  i64 a = t->chunk_index_start;
-  i64 b = t->chunk_index_stop;
+  i64 num_chunks = t->num_chunks;
 
-  if (a == b) return;
+  if (num_chunks == 0) return;
 
-  i64 k = b - 1;
-  u64 m = 1ull << (12 + k);
+  i64 num_chunks_skipped = t->num_chunks_skipped;
+  i64 last_chunk_index = num_chunks_skipped + num_chunks - 1;
+  i64 last_chunk_size = (i64) 1 << (AA_MIN_CHUNK_SIZE_LOG2 + last_chunk_index);
 
-  for (i64 i = a; i < k; i ++) {
+  t->chunk_capacity = last_chunk_size;
+
+  if (num_chunks == 1) return;
+
+  for (i64 i = num_chunks_skipped; i < last_chunk_index; i ++) {
     free(t->chunks[i]);
     t->chunks[i] = NULL;
   }
 
-  char * start = t->chunks[k];
-
-  t->start = start;
-  t->stop = start + m;
-  t->chunk_index_start = k;
+  t->num_chunks_skipped = last_chunk_index;
+  t->num_chunks = 1;
 }

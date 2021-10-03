@@ -31,7 +31,7 @@ typedef pa_result_t (* pa_null_rule_t) (pa_t *);
 
 typedef pa_result_t (* pa_left_rule_t) (pa_t *, pa_result_t);
 
-static pa_t pa_make(char * filename, char * source, aa_t * arena) {
+static pa_t pa_make(aa_t * arena, char * filename, char * source) {
   pa_t t;
 
   t.lexer = lx_make(source);
