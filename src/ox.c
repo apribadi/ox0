@@ -6,6 +6,7 @@
 
 #include "util.c"
 #include "mm.c"
+#include "aa.c"
 #include "sx.c"
 #include "bc.c"
 #include "vm.c"
