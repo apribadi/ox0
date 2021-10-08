@@ -5,8 +5,7 @@
 #include <string.h>
 
 #include "util.c"
-#include "mm.c"
-#include "aa.c"
+#include "memory.c"
 #include "sexp.c"
 #include "bytecode.c"
 #include "vm.c"
@@ -24,7 +23,7 @@ int main(int argc, const char * argv[]) {
   char * filename = (char *) argv[1];
   char * source = io_read(filename);
 
-  aa_t arena = aa_make();
+  mm_arena_t arena = mm_arena_make();
   pa_t parser = pa_make(&arena, filename, source);
 
   sx_t e = pa_expression(&parser);

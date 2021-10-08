@@ -3,7 +3,7 @@
 typedef struct {
   lx_t lexer;
   lx_token_t token;
-  aa_t * arena;
+  mm_arena_t * arena;
   bool is_panicking;
   char const * filename;
   char const * source;
@@ -31,7 +31,7 @@ typedef pa_result_t (* pa_null_rule_t) (pa_t *);
 
 typedef pa_result_t (* pa_left_rule_t) (pa_t *, pa_result_t);
 
-static pa_t pa_make(aa_t * arena, char const * filename, char const * source) {
+static pa_t pa_make(mm_arena_t * arena, char const * filename, char const * source) {
   pa_t t;
 
   t.lexer = lx_make(source);
