@@ -11,8 +11,7 @@
 #include "bc.c"
 #include "vm.c"
 #include "io.c"
-#include "tk.c"
-#include "lx.c"
+#include "lexer.c"
 #include "pa.c"
 #include "test.c"
 

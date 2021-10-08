@@ -2,7 +2,7 @@
 
 typedef struct {
   lx_t lexer;
-  tk_t token;
+  lx_token_t token;
   aa_t * arena;
   bool is_panicking;
   char * filename;
@@ -88,9 +88,9 @@ static void pa_maybe_report_error(pa_t * t, char * location, char * message) {
 }
 
 static void pa_advance(pa_t * t) {
-  tk_t token = lx_step(&t->lexer);
+  lx_token_t token = lx_step(&t->lexer);
 
-  while (token.tag == TK_ERROR) {
+  while (token.tag == LX_TOKEN_ERROR) {
     pa_maybe_report_error(t, token.start, "invalid token");
     token = lx_step(&t->lexer);
   }
@@ -98,7 +98,7 @@ static void pa_advance(pa_t * t) {
   t->token = token;
 }
 
-static void pa_consume(pa_t * t, tk_tag_t tag) {
+static void pa_consume(pa_t * t, lx_token_tag_t tag) {
   if (t->token.tag != tag) {
     pa_maybe_report_error(t, t->token.start, "not expected token");
   };
@@ -115,7 +115,7 @@ static pa_result_t pa_expression(pa_t * t) {
 static pa_result_t pa_grouping(pa_t * t) {
   pa_advance(t);
   pa_result_t a = pa_expression(t);
-  pa_consume(t, TK_RPAREN);
+  pa_consume(t, LX_TOKEN_RPAREN);
 
   return a;
 }
@@ -193,43 +193,43 @@ static pa_result_t pa_null_rule_error(pa_t * t) {
   return sx_make_atom(5, "ERROR");
 }
 
-static pa_null_rule_t pa_null_rule(tk_tag_t tag) {
+static pa_null_rule_t pa_null_rule(lx_token_tag_t tag) {
   switch (tag) {
-    case TK_LPAREN:
+    case LX_TOKEN_LPAREN:
       return pa_grouping;
-    case TK_NEG:
+    case LX_TOKEN_NEG:
       return pa_neg;
-    case TK_NUMBER:
+    case LX_TOKEN_NUMBER:
       return pa_number;
   }
 
   return pa_null_rule_error;
 }
 
-static pa_left_rule_t pa_left_rule(tk_tag_t tag) {
+static pa_left_rule_t pa_left_rule(lx_token_tag_t tag) {
   switch (tag) {
-    case TK_ADD:
+    case LX_TOKEN_ADD:
       return pa_add;
-    case TK_SUB:
+    case LX_TOKEN_SUB:
       return pa_sub;
-    case TK_MUL:
+    case LX_TOKEN_MUL:
       return pa_mul;
-    case TK_DIV:
+    case LX_TOKEN_DIV:
       return pa_div;
   }
 
   return NULL;
 }
 
-static pa_binding_power_t pa_left_binding_power(tk_tag_t tag) {
+static pa_binding_power_t pa_left_binding_power(lx_token_tag_t tag) {
   switch (tag) {
-    case TK_ADD:
+    case LX_TOKEN_ADD:
       return PA_BINDING_POWER_TERM;
-    case TK_SUB:
+    case LX_TOKEN_SUB:
       return PA_BINDING_POWER_TERM;
-    case TK_MUL:
+    case LX_TOKEN_MUL:
       return PA_BINDING_POWER_FACTOR;
-    case TK_DIV:
+    case LX_TOKEN_DIV:
       return PA_BINDING_POWER_FACTOR;
   }
 
