@@ -20,8 +20,8 @@ int main(int argc, const char * argv[]) {
     return 1;
   }
 
-  char * filename = (char *) argv[1];
-  char * source = io_read(filename);
+  char const * filename = argv[1];
+  char const * source = io_read(filename);
 
   mm_arena_t arena = mm_arena_make();
   pa_t parser = pa_make(&arena, filename, source);
