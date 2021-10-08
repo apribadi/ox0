@@ -5,8 +5,8 @@ typedef struct {
   lx_token_t token;
   aa_t * arena;
   bool is_panicking;
-  char * filename;
-  char * source;
+  char const * filename;
+  char const * source;
 } pa_t;
 
 enum {
@@ -31,7 +31,7 @@ typedef pa_result_t (* pa_null_rule_t) (pa_t *);
 
 typedef pa_result_t (* pa_left_rule_t) (pa_t *, pa_result_t);
 
-static pa_t pa_make(aa_t * arena, char * filename, char * source) {
+static pa_t pa_make(aa_t * arena, char const * filename, char const * source) {
   pa_t t;
 
   t.lexer = lx_make(source);
@@ -44,10 +44,10 @@ static pa_t pa_make(aa_t * arena, char * filename, char * source) {
   return t;
 }
 
-static void pa_report_error(pa_t * t, char * location, char * message) {
+static void pa_report_error(pa_t * t, char const * location, char const * message) {
   i64 line_number = 1;
-  char * line_start = t->source;
-  char * p = t->source;
+  char const * line_start = t->source;
+  char const * p = t->source;
 
   while (p != location) {
     if (* p == '\n') {
@@ -58,7 +58,7 @@ static void pa_report_error(pa_t * t, char * location, char * message) {
     p ++;
   }
 
-  char * q = line_start;
+  char const * q = line_start;
 
   while (* q != '\n' && * q != '\0') {
     q ++;
@@ -81,7 +81,7 @@ static void pa_report_error(pa_t * t, char * location, char * message) {
     );
 };
 
-static void pa_maybe_report_error(pa_t * t, char * location, char * message) {
+static void pa_maybe_report_error(pa_t * t, char const * location, char const * message) {
   if (t->is_panicking) return;
   t->is_panicking = true;
   pa_report_error(t, location, message);

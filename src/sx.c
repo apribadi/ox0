@@ -7,7 +7,7 @@ enum {
 
 struct sx_t;
 
-typedef struct { i64 len; char * data; } sx_atom_t;
+typedef struct { i64 len; char const * data; } sx_atom_t;
 
 typedef struct { i64 len; struct sx_t * data; } sx_list_t;
 
@@ -16,7 +16,7 @@ typedef struct sx_t {
   union { sx_atom_t atom; sx_list_t list; } as;
 } sx_t;
 
-static inline sx_t sx_make_atom(i64 len, char * data) {
+static inline sx_t sx_make_atom(i64 len, char const * data) {
   sx_t t;
 
   t.tag = SX_TAG_ATOM;

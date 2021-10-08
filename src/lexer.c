@@ -1,8 +1,8 @@
-// lexing
+// lexer
 //
 // lx_t
 //
-// lx_t lx_make(char * source)
+// lx_t lx_make(char const * source)
 //
 // lx_token_t lx_step(lx_t * t)
 
@@ -62,11 +62,11 @@ typedef u8 lx_token_tag_t;
 
 typedef struct {
   lx_token_tag_t tag;
-  char * start;
-  char * stop;
+  char const * start;
+  char const * stop;
 } lx_token_t;
 
-static inline lx_token_t lx_token_make(lx_token_tag_t tag, char * start, char * stop) {
+static inline lx_token_t lx_token_make(lx_token_tag_t tag, char const * start, char const * stop) {
   return (lx_token_t) { .tag = tag, .start = start, .stop = stop };
 }
 
@@ -125,12 +125,12 @@ static void lx_token_show(lx_token_t t) {
 }
 
 typedef struct {
-  char * pos;
+  char const * pos;
 } lx_t;
 
 // Source MUST be terminated by a '\0' character.
 
-static inline lx_t lx_make(char * source) {
+static inline lx_t lx_make(char const * source) {
   return (lx_t) { .pos = source };
 }
 
@@ -178,9 +178,9 @@ static lx_class_t lx_class_table[];
 
 static lx_state_t lx_transition_table[][LX_CLASS_COUNT];
 
-static lx_token_t (* lx_jump_table[])(char *, lx_state_t, i64);
+static lx_token_t (* lx_jump_table[])(char const *, lx_state_t, i64);
 
-static lx_token_t lx_step__loop(char * p, lx_state_t s, i64 n) {
+static lx_token_t lx_step__loop(char const * p, lx_state_t s, i64 n) {
   n = n + (s < LX_STATE_INCLUDED_COUNT);
   s = lx_transition_table[s][lx_class_table[(u8) * p]];
   p = p + 1;
@@ -189,29 +189,29 @@ static lx_token_t lx_step__loop(char * p, lx_state_t s, i64 n) {
 }
 
 static inline lx_token_t lx_step(lx_t * t) {
-  char * p = t->pos;
+  char const * p = t->pos;
   lx_token_t r = lx_step__loop(p, LX_STATE_Y_START, 0);
   t->pos = r.stop;
   return r;
 }
 
-static lx_token_t lx_step__eof(char * p, __attribute__((unused)) lx_state_t s, __attribute__((unused)) i64 n) {
-  char * start = p - 1;
-  char * stop = p - 1;
+static lx_token_t lx_step__eof(char const * p, __attribute__((unused)) lx_state_t s, __attribute__((unused)) i64 n) {
+  char const * start = p - 1;
+  char const * stop = p - 1;
 
   return lx_token_make(LX_TOKEN_EOF, start, stop);
 }
 
-static lx_token_t lx_step__error(char * p, __attribute__((unused)) lx_state_t s, i64 n) {
-  char * start = p - 1 - n;
-  char * stop = p;
+static lx_token_t lx_step__error(char const * p, __attribute__((unused)) lx_state_t s, i64 n) {
+  char const * start = p - 1 - n;
+  char const * stop = p;
 
   return lx_token_make(LX_TOKEN_ERROR, start, stop);
 }
 
-static lx_token_t lx_step__id(char * p, __attribute__((unused)) lx_state_t s, i64 n) {
-  char * start = p - 1 - n;
-  char * stop = p - 1;
+static lx_token_t lx_step__id(char const * p, __attribute__((unused)) lx_state_t s, i64 n) {
+  char const * start = p - 1 - n;
+  char const * stop = p - 1;
 
   switch (n) {
     case 2:
@@ -240,16 +240,16 @@ static lx_token_t lx_step__id(char * p, __attribute__((unused)) lx_state_t s, i6
   return lx_token_make(LX_TOKEN_ID, start, stop);
 }
 
-static lx_token_t lx_step__number(char * p, __attribute__((unused)) lx_state_t s, i64 n) {
-  char * start = p - 1 - n;
-  char * stop = p - 1;
+static lx_token_t lx_step__number(char const * p, __attribute__((unused)) lx_state_t s, i64 n) {
+  char const * start = p - 1 - n;
+  char const * stop = p - 1;
 
   return lx_token_make(LX_TOKEN_NUMBER, start, stop);
 }
 
-static lx_token_t lx_step__op(char * p, __attribute__((unused)) lx_state_t s, i64 n) {
-  char * start = p - 1 - n;
-  char * stop = p - 1;
+static lx_token_t lx_step__op(char const * p, __attribute__((unused)) lx_state_t s, i64 n) {
+  char const * start = p - 1 - n;
+  char const * stop = p - 1;
 
   switch (n) {
     case 1:
@@ -279,9 +279,9 @@ static lx_token_t lx_step__op(char * p, __attribute__((unused)) lx_state_t s, i6
   return lx_token_make(LX_TOKEN_ERROR, start, stop);
 }
 
-static lx_token_t lx_step__punct(char * p, __attribute__((unused)) lx_state_t s, __attribute__((unused)) i64 n) {
-  char * start = p - 1;
-  char * stop = p;
+static lx_token_t lx_step__punct(char const * p, __attribute__((unused)) lx_state_t s, __attribute__((unused)) i64 n) {
+  char const * start = p - 1;
+  char const * stop = p;
 
   switch (* start) {
     case ',': return lx_token_make(LX_TOKEN_COMMA, start, stop);
@@ -633,7 +633,7 @@ static lx_state_t lx_transition_table[][LX_CLASS_COUNT] = {
   },
 };
 
-static lx_token_t (* lx_jump_table[LX_STATE_COUNT])(char *, lx_state_t, i64) = {
+static lx_token_t (* lx_jump_table[LX_STATE_COUNT])(char const *, lx_state_t, i64) = {
   [LX_STATE_ID] = lx_step__loop,
   [LX_STATE_MINUS] = lx_step__loop,
   [LX_STATE_NUMBER] = lx_step__loop,
