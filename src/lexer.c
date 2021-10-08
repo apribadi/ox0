@@ -51,9 +51,10 @@ enum {
   LX_TOKEN_THEN,
   LX_TOKEN_WHILE,
 
+  // misc
+
   LX_TOKEN_ID,
   LX_TOKEN_NUMBER,
-
   LX_TOKEN_EOF,
   LX_TOKEN_ERROR,
 };
@@ -137,7 +138,7 @@ static inline lx_t lx_make(char const * source) {
 // character class
 
 enum {
-  LX_CLASS_ILLEGAL,
+  LX_CLASS_ILLEGAL = 0,
   LX_CLASS_ALPHA,
   LX_CLASS_DIGIT,
   LX_CLASS_HASH,
@@ -159,8 +160,8 @@ enum {
   LX_STATE_MINUS,
   LX_STATE_NUMBER,
   LX_STATE_OP,
-  LX_STATE_Y_COMMENT,
-  LX_STATE_Y_START,
+  LX_STATE_COMMENT,
+  LX_STATE_START,
   LX_STATE_Z_EOF,
   LX_STATE_Z_ERROR,
   LX_STATE_Z_ID,
@@ -190,7 +191,7 @@ static lx_token_t lx_step__loop(char const * p, lx_state_t s, i64 n) {
 
 static inline lx_token_t lx_step(lx_t * t) {
   char const * p = t->pos;
-  lx_token_t r = lx_step__loop(p, LX_STATE_Y_START, 0);
+  lx_token_t r = lx_step__loop(p, LX_STATE_START, 0);
   t->pos = r.stop;
   return r;
 }
@@ -445,29 +446,29 @@ static lx_state_t lx_transition_table[][LX_CLASS_COUNT] = {
     LX_STATE_Z_OP, // PUNCT
     LX_STATE_Z_OP, // WHITESPACE
   },
-  [LX_STATE_Y_COMMENT] = {
-    LX_STATE_Y_COMMENT, // ILLEGAL
-    LX_STATE_Y_COMMENT, // ALPHA
-    LX_STATE_Y_COMMENT, // DIGIT
-    LX_STATE_Y_COMMENT, // HASH
-    LX_STATE_Y_COMMENT, // MINUS
-    LX_STATE_Y_START, // NEWLINE
+  [LX_STATE_COMMENT] = {
+    LX_STATE_COMMENT, // ILLEGAL
+    LX_STATE_COMMENT, // ALPHA
+    LX_STATE_COMMENT, // DIGIT
+    LX_STATE_COMMENT, // HASH
+    LX_STATE_COMMENT, // MINUS
+    LX_STATE_START, // NEWLINE
     LX_STATE_Z_EOF, // NULL
-    LX_STATE_Y_COMMENT, // OP
-    LX_STATE_Y_COMMENT, // PUNCT
-    LX_STATE_Y_COMMENT, // WHITESPACE
+    LX_STATE_COMMENT, // OP
+    LX_STATE_COMMENT, // PUNCT
+    LX_STATE_COMMENT, // WHITESPACE
   },
-  [LX_STATE_Y_START] = {
+  [LX_STATE_START] = {
     LX_STATE_Z_ERROR, // ILLEGAL
     LX_STATE_ID, // ALPHA
     LX_STATE_NUMBER, // DIGIT
-    LX_STATE_Y_COMMENT, // HASH
+    LX_STATE_COMMENT, // HASH
     LX_STATE_MINUS, // MINUS
-    LX_STATE_Y_START, // NEWLINE
+    LX_STATE_START, // NEWLINE
     LX_STATE_Z_EOF, // NULL
     LX_STATE_OP, // OP
     LX_STATE_Z_PUNCT, // PUNCT
-    LX_STATE_Y_START, // WHITESPACE
+    LX_STATE_START, // WHITESPACE
   },
 };
 
@@ -476,8 +477,8 @@ static lx_token_t (* lx_jump_table[LX_STATE_COUNT])(char const *, lx_state_t, i6
   [LX_STATE_MINUS] = lx_step__loop,
   [LX_STATE_NUMBER] = lx_step__loop,
   [LX_STATE_OP] = lx_step__loop,
-  [LX_STATE_Y_COMMENT] = lx_step__loop,
-  [LX_STATE_Y_START] = lx_step__loop,
+  [LX_STATE_COMMENT] = lx_step__loop,
+  [LX_STATE_START] = lx_step__loop,
   [LX_STATE_Z_EOF] = lx_step__eof,
   [LX_STATE_Z_ERROR] = lx_step__error,
   [LX_STATE_Z_ID] = lx_step__id,

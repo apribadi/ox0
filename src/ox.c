@@ -7,12 +7,12 @@
 #include "util.c"
 #include "mm.c"
 #include "aa.c"
-#include "sx.c"
-#include "bc.c"
+#include "sexp.c"
+#include "bytecode.c"
 #include "vm.c"
 #include "io.c"
 #include "lexer.c"
-#include "pa.c"
+#include "parser.c"
 #include "test.c"
 
 int main(int argc, const char * argv[]) {
