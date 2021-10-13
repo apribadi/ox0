@@ -1,4 +1,4 @@
-// parsing
+// parser
 
 typedef struct {
   lx_t lexer;

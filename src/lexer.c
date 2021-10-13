@@ -1,4 +1,4 @@
-// lexing
+// lexer
 //
 // lx_t
 //
