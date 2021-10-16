@@ -4,7 +4,10 @@ bin/ox: src/*.c
 	clang \
 		-std=c17 \
 		-Wall -Wextra -Werror \
+		-pedantic \
+		-Wno-fixed-enum-extension \
 		-Wno-unused-function \
+		-Wno-switch \
 		-O2 \
 		-fno-strict-aliasing \
 		-o bin/ox \

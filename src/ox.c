@@ -10,8 +10,8 @@
 #include "bytecode.c"
 #include "vm.c"
 #include "io.c"
-#include "lexer.c"
-#include "parser.c"
+#include "lex.c"
+#include "parse.c"
 #include "test.c"
 
 int main(int argc, const char * argv[]) {
@@ -24,11 +24,11 @@ int main(int argc, const char * argv[]) {
   char const * source = io_read(filename);
 
   mm_arena_t arena = mm_arena_make();
-  pa_t parser = pa_make(&arena, filename, source);
+  Parse parse = parse_make(&arena, filename, source);
 
-  sx_t e = pa_expression(&parser);
+  Sexp e = parse_expression(&parse);
 
-  sx_show(e);
+  sexp_show(e);
 
   /*
   lx_t lex = lx_make(source);

@@ -1,52 +1,52 @@
 // s-expressions
 
-enum {
-  SX_TAG_ATOM,
-  SX_TAG_LIST,
-};
+typedef enum : u8 {
+  SEXP_TAG_ATOM,
+  SEXP_TAG_LIST,
+} SexpTag;
 
-struct sx_t;
+struct Sexp;
 
-typedef struct { i64 len; char const * data; } sx_atom_t;
+typedef struct { i64 len; char const * data; } SexpAtom;
 
-typedef struct { i64 len; struct sx_t * data; } sx_list_t;
+typedef struct { i64 len; struct Sexp * data; } SexpList;
 
-typedef struct sx_t {
+typedef struct Sexp {
   u8 tag;
-  union { sx_atom_t atom; sx_list_t list; } as;
-} sx_t;
+  union { SexpAtom atom; SexpList list; } as;
+} Sexp;
 
-static inline sx_t sx_make_atom(i64 len, char const * data) {
-  sx_t t;
+static inline Sexp sexp_make_atom(i64 len, char const * data) {
+  Sexp t;
 
-  t.tag = SX_TAG_ATOM;
+  t.tag = SEXP_TAG_ATOM;
   t.as.atom.len = len;
   t.as.atom.data = data;
 
   return t;
-};
+}
 
-static inline sx_t sx_make_list(mm_arena_t * arena, i64 len) {
-  sx_t t;
+static inline Sexp sexp_make_list(mm_arena_t * arena, i64 len) {
+  Sexp t;
 
-  t.tag = SX_TAG_LIST;
+  t.tag = SEXP_TAG_LIST;
   t.as.list.len = len;
-  t.as.list.data = mm_arena_alloc(arena, sizeof(sx_t) * len);
+  t.as.list.data = mm_arena_alloc(arena, sizeof(Sexp) * len);
 
   return t;
-};
+}
 
-static void sx_show_impl(sx_t t) {
+static void sexp_show_impl(Sexp t) {
   switch (t.tag) {
-    case SX_TAG_ATOM:
+    case SEXP_TAG_ATOM:
       printf("%.*s", (int) t.as.atom.len, t.as.atom.data);
       break;
 
-    case SX_TAG_LIST:
+    case SEXP_TAG_LIST:
       printf("(");
       i64 n = t.as.list.len;
       for (i64 i = 0; i < n; i ++) {
-        sx_show_impl(t.as.list.data[i]);
+        sexp_show_impl(t.as.list.data[i]);
         if (i + 1 != n) {
           printf(" ");
         }
@@ -54,9 +54,9 @@ static void sx_show_impl(sx_t t) {
       printf(")");
       break;
   }
-};
+}
 
-static void sx_show(sx_t t) {
-  sx_show_impl(t);
+static void sexp_show(Sexp t) {
+  sexp_show_impl(t);
   printf("\n");
 }
