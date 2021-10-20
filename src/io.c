@@ -6,7 +6,8 @@ static char * io_read(char const * path) {
   fseek(file, 0, SEEK_END);
   i64 n = ftell(file);
   rewind(file);
-  char * buf = mm_alloc(n + 1);
+  char * buf = malloc(n + 1);
+  if (!buf) panic("io_read: malloc failed!");
   if ((i64) fread(buf, 1, n, file) != n) panic("io_read: fread failed!");
   fclose(file);
   buf[n] = '\0';

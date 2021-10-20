@@ -7,12 +7,9 @@
 #include "util.c"
 #include "memory.c"
 #include "sexp.c"
-#include "bytecode.c"
-#include "vm.c"
 #include "io.c"
 #include "lex.c"
 #include "parse.c"
-#include "test.c"
 
 int main(int argc, const char * argv[]) {
   if (argc != 2) {
@@ -23,7 +20,7 @@ int main(int argc, const char * argv[]) {
   char const * filename = argv[1];
   char const * source = io_read(filename);
 
-  mm_arena_t arena = mm_arena_make();
+  Arena arena = mm_arena_make();
   Parse parse = parse_make(&arena, filename, source);
 
   Sexp e = parse_expression(&parse);

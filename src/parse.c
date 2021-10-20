@@ -3,7 +3,7 @@
 typedef struct {
   Lex lex;
   Token token;
-  mm_arena_t * arena;
+  Arena * arena;
   bool is_panicking;
   char const * filename;
   char const * source;
@@ -29,7 +29,7 @@ typedef ParseResult (* ParseNullRule) (Parse *);
 
 typedef ParseResult (* ParseLeftRule) (Parse *, ParseResult);
 
-static Parse parse_make(mm_arena_t * arena, char const * filename, char const * source) {
+static Parse parse_make(Arena * arena, char const * filename, char const * source) {
   Parse t;
 
   t.lex = lex_make(source);

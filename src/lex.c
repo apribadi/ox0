@@ -159,18 +159,18 @@ typedef enum : u8 {
   LEX_STATE_PUNCT,
 } LexState;
 
-#define LEX_STATE_SPANNED_COUNT 4
-#define LEX_STATE_NONTERMINAL_COUNT 6
+#define LEX_STATE_COUNT_MULTICHAR_TOKEN 4
+#define LEX_STATE_COUNT_NONTERMINAL 6
 #define LEX_STATE_COUNT 12
 
 static LexCharacterClass const lex_character_class_table[256];
 
-static LexState const lex_transition_table[LEX_STATE_NONTERMINAL_COUNT][LEX_CLASS_COUNT];
+static LexState const lex_transition_table[LEX_STATE_COUNT_NONTERMINAL][LEX_CLASS_COUNT];
 
 static Token (* const lex_jump_table[LEX_STATE_COUNT])(LexState, char const *, i64);
 
 static Token lex_next__loop(LexState s, char const * p, i64 n) {
-  n = n + (s < LEX_STATE_SPANNED_COUNT);
+  n = n + (s < LEX_STATE_COUNT_MULTICHAR_TOKEN);
   s = lex_transition_table[s][lex_character_class_table[(u8) * p]];
   p = p + 1;
 
@@ -386,7 +386,7 @@ static LexCharacterClass const lex_character_class_table[256] = {
   ['~'] = LEX_CLASS_OPERATOR,
 };
 
-static LexState const lex_transition_table[LEX_STATE_NONTERMINAL_COUNT][LEX_CLASS_COUNT] = {
+static LexState const lex_transition_table[LEX_STATE_COUNT_NONTERMINAL][LEX_CLASS_COUNT] = {
   [LEX_STATE_IDENTIFIER] = {
     [LEX_CLASS_UNUSED]     = LEX_STATE_COMPLETE_IDENTIFIER,
     [LEX_CLASS_ALPHA]      = LEX_STATE_IDENTIFIER,

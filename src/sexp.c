@@ -26,7 +26,7 @@ static inline Sexp sexp_make_atom(i64 len, char const * data) {
   return t;
 }
 
-static inline Sexp sexp_make_list(mm_arena_t * arena, i64 len) {
+static inline Sexp sexp_make_list(Arena * arena, i64 len) {
   Sexp t;
 
   t.tag = SEXP_TAG_LIST;
