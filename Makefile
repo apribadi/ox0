@@ -15,6 +15,4 @@ bin/ox: src/*.c
 
 test: bin/ox test/exp0.ox test/exp1.ox test/exp2.ox
 	cat test/exp0.ox
-	./bin/ox test/exp0.ox
-	# ./bin/ox test/exp1.ox
-	# ./bin/ox test/exp2.ox
+	./bin/ox test/exp0.ox | opt -O2 | llc --filetype=asm
