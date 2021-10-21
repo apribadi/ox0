@@ -13,7 +13,7 @@ typedef struct {
   char * chunks[ARENA_MAX_NUM_CHUNKS];
 } Arena;
 
-static inline Arena mm_arena_make(void) {
+static inline Arena arena_make(void) {
   Arena t;
 
   t.chunk_capacity = 0;
@@ -25,39 +25,39 @@ static inline Arena mm_arena_make(void) {
   return t;
 }
 
-static void * mm_arena_alloc_slow(Arena *, i64);
+static void * arena_alloc_slow(Arena *, i64);
 
-static inline void * mm_arena_alloc(Arena * t, i64 n) {
+static inline void * arena_alloc(Arena * t, i64 n) {
   i64 old_chunk_capacity = t->chunk_capacity;
-  if ((u64) old_chunk_capacity < (u64) n) return mm_arena_alloc_slow(t, n);
+  if ((u64) old_chunk_capacity < (u64) n) return arena_alloc_slow(t, n);
   i64 new_chunk_capacity = (old_chunk_capacity - n) & ~7;
   t->chunk_capacity = new_chunk_capacity;
   return t->chunk + new_chunk_capacity;
 }
 
 __attribute__((noinline))
-static void * mm_arena_alloc_slow(Arena * t, i64 n) {
+static void * arena_alloc_slow(Arena * t, i64 n) {
   i64 num_chunks_skipped = t->num_chunks_skipped;
   i64 num_chunks = t->num_chunks;
   i64 chunk_index = num_chunks_skipped + num_chunks;
   i64 chunk_size = (i64) 1 << (ARENA_MIN_CHUNK_SIZE_LOG2 + chunk_index);
 
-  if (n < 0) panic("mm_arena_alloc: negative size!");
-  if (chunk_index >= ARENA_MAX_NUM_CHUNKS) panic("mm_arena_alloc: too many chunks!");
+  if (n < 0) panic("arena_alloc: negative size!");
+  if (chunk_index >= ARENA_MAX_NUM_CHUNKS) panic("arena_alloc: too many chunks!");
 
   char * chunk = malloc(chunk_size);
 
-  if (!chunk) panic("mm_arena_alloc: malloc failed!");
+  if (!chunk) panic("arena_alloc: malloc failed!");
 
   t->chunk_capacity = chunk_size;
   t->chunk = chunk;
   t->num_chunks = num_chunks + 1;
   t->chunks[chunk_index] = chunk;
 
-  return mm_arena_alloc(t, n);
+  return arena_alloc(t, n);
 }
 
-static void mm_arena_clear(Arena * t) {
+static void arena_clear(Arena * t) {
   i64 num_chunks = t->num_chunks;
 
   if (num_chunks == 0) return;

@@ -6,10 +6,12 @@
 
 #include "util.c"
 #include "memory.c"
+#include "symbol.c"
 #include "sexp.c"
+#include "codegen.c"
+#include "lexer.c"
+#include "parser.c"
 #include "io.c"
-#include "lex.c"
-#include "parse.c"
 
 int main(int argc, const char * argv[]) {
   if (argc != 2) {
@@ -20,10 +22,10 @@ int main(int argc, const char * argv[]) {
   char const * filename = argv[1];
   char const * source = io_read(filename);
 
-  Arena arena = mm_arena_make();
-  Parse parse = parse_make(&arena, filename, source);
+  Arena arena = arena_make();
+  Parser parser = parser_make(&arena, filename, source);
 
-  Sexp e = parse_expression(&parse);
+  Sexp e = parser_expression(&parser);
 
   sexp_show(e);
 

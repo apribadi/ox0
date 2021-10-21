@@ -31,7 +31,7 @@ static inline Sexp sexp_make_list(Arena * arena, i64 len) {
 
   t.tag = SEXP_TAG_LIST;
   t.as.list.len = len;
-  t.as.list.data = mm_arena_alloc(arena, sizeof(Sexp) * len);
+  t.as.list.data = arena_alloc(arena, sizeof(Sexp) * len);
 
   return t;
 }
