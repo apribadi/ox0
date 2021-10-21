@@ -18,14 +18,13 @@ typedef enum : u8 {
 
 struct SyntaxUnary;
 struct SyntaxBinary;
-struct SyntaxLiteral;
 
 typedef struct SyntaxExpression {
   SyntaxExpressionTag tag;
   union {
     struct SyntaxUnary * unary;
     struct SyntaxBinary * binary;
-    struct SyntaxLiteral * literal;
+    Symbol literal;
   } as;
 } SyntaxExpression;
 
@@ -39,11 +38,6 @@ typedef struct SyntaxBinary {
   SyntaxExpression left;
   SyntaxExpression right;
 } SyntaxBinary;
-
-typedef struct SyntaxLiteral {
-  char const * start;
-  char const * stop;
-} SyntaxLiteral;
 
 SyntaxExpression syntax_make_error(void) {
   SyntaxExpression exp;
@@ -81,16 +75,9 @@ SyntaxExpression syntax_make_binary(
   return exp;
 }
 
-SyntaxExpression syntax_make_literal(
-      Arena * arena,
-      char const * start,
-      char const * stop
-    ) {
-  SyntaxLiteral * literal = arena_alloc(arena, sizeof(SyntaxLiteral));
-  literal->start = start;
-  literal->stop = stop;
+SyntaxExpression syntax_make_literal(Symbol symbol) {
   SyntaxExpression exp;
   exp.tag = SYNTAX_EXPRESSION_TAG_LITERAL;
-  exp.as.literal = literal;
+  exp.as.literal = symbol;
   return exp;
 }

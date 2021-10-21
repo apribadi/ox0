@@ -11,18 +11,9 @@ typedef struct {
   CodegenRegOrLiteralTag tag;
   union {
     i64 reg;
-    SyntaxLiteral literal;
+    Symbol literal;
   } as;
 } CodegenRegOrLiteral;
-
-/*
-define i64 @foo(i64 %0, i64 %1) {
-2:
-  %3 = add i64 %0, %1
-  %4 = add i64 %3, 100
-  ret i64 %4
-}
-*/
 
 CodegenRegOrLiteral codegen_reg(i64 label) {
   CodegenRegOrLiteral result;
@@ -31,7 +22,7 @@ CodegenRegOrLiteral codegen_reg(i64 label) {
   return result;
 }
 
-CodegenRegOrLiteral codegen_literal(SyntaxLiteral literal) {
+CodegenRegOrLiteral codegen_literal(Symbol literal) {
   CodegenRegOrLiteral result;
   result.tag = CODEGEN_LITERAL;
   result.as.literal = literal;
@@ -43,8 +34,8 @@ void codegen_emit_reg_or_literal(CodegenRegOrLiteral arg) {
     case CODEGEN_REG:
       printf("%%%d", (int) arg.as.reg);
       break;
-    case CODEGEN_LITERAL:
-      printf("%.*s", (int) (arg.as.literal.stop - arg.as.literal.start), arg.as.literal.start);
+    case CODEGEN_LITERAL: 
+      print_symbol(arg.as.literal);
       break;
   }
 }
@@ -92,7 +83,7 @@ CodegenRegOrLiteral codegen_emit_expression(Codegen * cg, SyntaxExpression exp) 
         return codegen_reg(label);
       }
     case SYNTAX_EXPRESSION_TAG_LITERAL:
-      return codegen_literal(* exp.as.literal);
+      return codegen_literal(exp.as.literal);
   }
 
   return codegen_reg(-1); // ???

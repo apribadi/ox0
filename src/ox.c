@@ -6,6 +6,7 @@
 
 #include "util.c"
 #include "memory.c"
+#include "symbol.c"
 #include "sexp.c"
 #include "syntax.c"
 #include "lexer.c"

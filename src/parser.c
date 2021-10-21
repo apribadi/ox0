@@ -85,27 +85,27 @@ static void parser_consume(Parser * t, TokenTag tag) {
 }
 
 typedef enum : u8 {
-  PARSER_EXPRESSION_BINDING_POWER_NONE,
-  PARSER_EXPRESSION_BINDING_POWER_ASSIGNMENT,
-  PARSER_EXPRESSION_BINDING_POWER_OR,         // right
-  PARSER_EXPRESSION_BINDING_POWER_AND,        // right
-  PARSER_EXPRESSION_BINDING_POWER_EQUALITY,   // left
-  PARSER_EXPRESSION_BINDING_POWER_COMPARISON, // left
-  PARSER_EXPRESSION_BINDING_POWER_TERM,       // left
-  PARSER_EXPRESSION_BINDING_POWER_FACTOR,     // left
-  PARSER_EXPRESSION_BINDING_POWER_PREFIX,
-  PARSER_EXPRESSION_BINDING_POWER_CALL,
-  PARSER_EXPRESSION_BINDING_POWER_PRIMARY,
-} ParserBindingPower;
+  BINDING_POWER_NONE,
+  BINDING_POWER_ASSIGNMENT,
+  BINDING_POWER_OR,         // right
+  BINDING_POWER_AND,        // right
+  BINDING_POWER_EQUALITY,   // left
+  BINDING_POWER_COMPARISON, // left
+  BINDING_POWER_TERM,       // left
+  BINDING_POWER_FACTOR,     // left
+  BINDING_POWER_PREFIX,
+  BINDING_POWER_CALL,
+  BINDING_POWER_PRIMARY,
+} BindingPower;
 
 typedef SyntaxExpression (* ParserExpressionNullRule) (Parser *);
 
 typedef SyntaxExpression (* ParserExpressionLeftRule) (Parser *, SyntaxExpression);
 
-static SyntaxExpression parser_expression_with_precedence(Parser * t, ParserBindingPower n);
+static SyntaxExpression parser_expression_with_precedence(Parser * t, BindingPower n);
 
 static SyntaxExpression parser_expression(Parser * t) {
-  return parser_expression_with_precedence(t, PARSER_EXPRESSION_BINDING_POWER_NONE);
+  return parser_expression_with_precedence(t, BINDING_POWER_NONE);
 }
 
 static SyntaxExpression parser_expression_grouping(Parser * t) {
@@ -117,41 +117,41 @@ static SyntaxExpression parser_expression_grouping(Parser * t) {
 
 static SyntaxExpression parser_neg(Parser * t) {
   parser_advance(t);
-  SyntaxExpression a = parser_expression_with_precedence(t, PARSER_EXPRESSION_BINDING_POWER_PREFIX);
+  SyntaxExpression a = parser_expression_with_precedence(t, BINDING_POWER_PREFIX);
   SyntaxExpression e = syntax_make_unary(t->arena, SYNTAX_OPERATOR_NEG, a);
   return e;
 }
 
 static SyntaxExpression parser_add(Parser * t, SyntaxExpression a) {
   parser_advance(t);
-  SyntaxExpression b = parser_expression_with_precedence(t, PARSER_EXPRESSION_BINDING_POWER_TERM);
+  SyntaxExpression b = parser_expression_with_precedence(t, BINDING_POWER_TERM);
   SyntaxExpression e = syntax_make_binary(t->arena, SYNTAX_OPERATOR_ADD, a, b);
   return e;
 }
 
 static SyntaxExpression parser_sub(Parser * t, SyntaxExpression a) {
   parser_advance(t);
-  SyntaxExpression b = parser_expression_with_precedence(t, PARSER_EXPRESSION_BINDING_POWER_TERM);
+  SyntaxExpression b = parser_expression_with_precedence(t, BINDING_POWER_TERM);
   SyntaxExpression e = syntax_make_binary(t->arena, SYNTAX_OPERATOR_SUB, a, b);
   return e;
 }
 
 static SyntaxExpression parser_mul(Parser * t, SyntaxExpression a) {
   parser_advance(t);
-  SyntaxExpression b = parser_expression_with_precedence(t, PARSER_EXPRESSION_BINDING_POWER_FACTOR);
+  SyntaxExpression b = parser_expression_with_precedence(t, BINDING_POWER_FACTOR);
   SyntaxExpression e = syntax_make_binary(t->arena, SYNTAX_OPERATOR_MUL, a, b);
   return e;
 }
 
 static SyntaxExpression parser_div(Parser * t, SyntaxExpression a) {
   parser_advance(t);
-  SyntaxExpression b = parser_expression_with_precedence(t, PARSER_EXPRESSION_BINDING_POWER_FACTOR);
+  SyntaxExpression b = parser_expression_with_precedence(t, BINDING_POWER_FACTOR);
   SyntaxExpression e = syntax_make_binary(t->arena, SYNTAX_OPERATOR_DIV, a, b);
   return e;
 }
 
 static SyntaxExpression parser_number(Parser * t) {
-  SyntaxExpression e = syntax_make_literal(t->arena, t->token.start, t->token.stop);
+  SyntaxExpression e = syntax_make_literal(token_symbol(t->token));
   parser_advance(t);
   return e;
 }
@@ -189,22 +189,22 @@ static ParserExpressionLeftRule parser_left_rule(TokenTag tag) {
   return NULL;
 }
 
-static ParserBindingPower parser_left_binding_power(TokenTag tag) {
+static BindingPower parser_left_binding_power(TokenTag tag) {
   switch (tag) {
     case TOKEN_ADD:
-      return PARSER_EXPRESSION_BINDING_POWER_TERM;
+      return BINDING_POWER_TERM;
     case TOKEN_SUB:
-      return PARSER_EXPRESSION_BINDING_POWER_TERM;
+      return BINDING_POWER_TERM;
     case TOKEN_MUL:
-      return PARSER_EXPRESSION_BINDING_POWER_FACTOR;
+      return BINDING_POWER_FACTOR;
     case TOKEN_DIV:
-      return PARSER_EXPRESSION_BINDING_POWER_FACTOR;
+      return BINDING_POWER_FACTOR;
   }
 
-  return PARSER_EXPRESSION_BINDING_POWER_NONE;
+  return BINDING_POWER_NONE;
 }
 
-static SyntaxExpression parser_expression_with_precedence(Parser * t, ParserBindingPower right_binding_power) {
+static SyntaxExpression parser_expression_with_precedence(Parser * t, BindingPower right_binding_power) {
   SyntaxExpression e = parser_null_rule(t->token.tag)(t);;
 
   while (right_binding_power < parser_left_binding_power(t->token.tag)) {
