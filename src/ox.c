@@ -8,6 +8,7 @@
 #include "memory.c"
 #include "symbol.c"
 #include "sexp.c"
+#include "syntax.c"
 #include "codegen.c"
 #include "lexer.c"
 #include "parser.c"

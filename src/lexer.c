@@ -111,7 +111,7 @@ typedef struct {
   char const * stop;
 } Token;
 
-static inline Token token_make(TokenTag tag, char const * start, char const * stop) {
+static inline Token make_token(TokenTag tag, char const * start, char const * stop) {
   return (Token) { .tag = tag, .start = start, .stop = stop };
 }
 
@@ -187,14 +187,14 @@ static Token lexer_next__eof(__unused LexerState s, char const * p, __unused i64
   char const * start = p - 1;
   char const * stop = p - 1;
 
-  return token_make(TOKEN_EOF, start, stop);
+  return make_token(TOKEN_EOF, start, stop);
 }
 
 static Token lexer_next__illegal_character(__unused LexerState s, char const * p, __unused i64 n) {
   char const * start = p - 1;
   char const * stop = p;
 
-  return token_make(TOKEN_ILLEGAL_CHARACTER, start, stop);
+  return make_token(TOKEN_ILLEGAL_CHARACTER, start, stop);
 }
 
 static Token lexer_next__identifier(__unused LexerState s, char const * p, i64 n) {
@@ -203,38 +203,38 @@ static Token lexer_next__identifier(__unused LexerState s, char const * p, i64 n
 
   switch (n) {
     case 2:
-      if (!bcmp(start, "do", 2)) return token_make(TOKEN_DO, start, stop);
-      if (!bcmp(start, "if", 2)) return token_make(TOKEN_IF, start, stop);
-      if (!bcmp(start, "or", 2)) return token_make(TOKEN_OR, start, stop);
+      if (!bcmp(start, "do", 2)) return make_token(TOKEN_DO, start, stop);
+      if (!bcmp(start, "if", 2)) return make_token(TOKEN_IF, start, stop);
+      if (!bcmp(start, "or", 2)) return make_token(TOKEN_OR, start, stop);
       break;
     case 3:
-      if (!bcmp(start, "and", 3)) return token_make(TOKEN_AND, start, stop);
-      if (!bcmp(start, "end", 3)) return token_make(TOKEN_END, start, stop);
-      if (!bcmp(start, "for", 3)) return token_make(TOKEN_FOR, start, stop);
-      if (!bcmp(start, "let", 3)) return token_make(TOKEN_LET, start, stop);
+      if (!bcmp(start, "and", 3)) return make_token(TOKEN_AND, start, stop);
+      if (!bcmp(start, "end", 3)) return make_token(TOKEN_END, start, stop);
+      if (!bcmp(start, "for", 3)) return make_token(TOKEN_FOR, start, stop);
+      if (!bcmp(start, "let", 3)) return make_token(TOKEN_LET, start, stop);
       break;
     case 4:
-      if (!bcmp(start, "case", 4)) return token_make(TOKEN_CASE, start, stop);
-      if (!bcmp(start, "elif", 4)) return token_make(TOKEN_ELIF, start, stop);
-      if (!bcmp(start, "else", 4)) return token_make(TOKEN_ELSE, start, stop);
-      if (!bcmp(start, "then", 4)) return token_make(TOKEN_THEN, start, stop);
+      if (!bcmp(start, "case", 4)) return make_token(TOKEN_CASE, start, stop);
+      if (!bcmp(start, "elif", 4)) return make_token(TOKEN_ELIF, start, stop);
+      if (!bcmp(start, "else", 4)) return make_token(TOKEN_ELSE, start, stop);
+      if (!bcmp(start, "then", 4)) return make_token(TOKEN_THEN, start, stop);
       break;
     case 5:
-      if (!bcmp(start, "while", 5)) return token_make(TOKEN_WHILE, start, stop);
+      if (!bcmp(start, "while", 5)) return make_token(TOKEN_WHILE, start, stop);
       break;
     case 8:
-      if (!bcmp(start, "function", 8)) return token_make(TOKEN_FUNCTION, start, stop);
+      if (!bcmp(start, "function", 8)) return make_token(TOKEN_FUNCTION, start, stop);
       break;
   }
 
-  return token_make(TOKEN_IDENTIFIER, start, stop);
+  return make_token(TOKEN_IDENTIFIER, start, stop);
 }
 
 static Token lexer_next__number(__unused LexerState s, char const * p, i64 n) {
   char const * start = p - 1 - n;
   char const * stop = p - 1;
 
-  return token_make(TOKEN_NUMBER, start, stop);
+  return make_token(TOKEN_NUMBER, start, stop);
 }
 
 static Token lexer_next__operator(__unused LexerState s, char const * p, i64 n) {
@@ -244,29 +244,29 @@ static Token lexer_next__operator(__unused LexerState s, char const * p, i64 n) 
   switch (n) {
     case 1:
       switch (* start) {
-        case '=': return token_make(TOKEN_ASSIGNMENT, start, stop);
-        case '+': return token_make(TOKEN_ADD, start, stop);
-        case '-': return token_make(TOKEN_SUB, start, stop);
-        case '*': return token_make(TOKEN_MUL, start, stop);
-        case '~': return token_make(TOKEN_NEG, start, stop);
-        case '/': return token_make(TOKEN_DIV, start, stop);
-        case '<': return token_make(TOKEN_LT, start, stop);
-        case '>': return token_make(TOKEN_GT, start, stop);
+        case '=': return make_token(TOKEN_ASSIGNMENT, start, stop);
+        case '+': return make_token(TOKEN_ADD, start, stop);
+        case '-': return make_token(TOKEN_SUB, start, stop);
+        case '*': return make_token(TOKEN_MUL, start, stop);
+        case '~': return make_token(TOKEN_NEG, start, stop);
+        case '/': return make_token(TOKEN_DIV, start, stop);
+        case '<': return make_token(TOKEN_LT, start, stop);
+        case '>': return make_token(TOKEN_GT, start, stop);
       }
       break;
     case 2:
       if (* (start + 1) == '=') {
         switch (* start) {
-          case '=': return token_make(TOKEN_EQ, start, stop);
-          case '!': return token_make(TOKEN_NE, start, stop);
-          case '<': return token_make(TOKEN_LE, start, stop);
-          case '>': return token_make(TOKEN_GE, start, stop);
+          case '=': return make_token(TOKEN_EQ, start, stop);
+          case '!': return make_token(TOKEN_NE, start, stop);
+          case '<': return make_token(TOKEN_LE, start, stop);
+          case '>': return make_token(TOKEN_GE, start, stop);
         }
       }
       break;
   };
 
-  return token_make(TOKEN_ILLEGAL_CHARACTER, start, stop);
+  return make_token(TOKEN_ILLEGAL_CHARACTER, start, stop);
 }
 
 static Token lexer_next__punct(__unused LexerState s, char const * p, __unused i64 n) {
@@ -274,21 +274,21 @@ static Token lexer_next__punct(__unused LexerState s, char const * p, __unused i
   char const * stop = p;
 
   switch (* start) {
-    case ',': return token_make(TOKEN_COMMA, start, stop);
-    case '.': return token_make(TOKEN_DOT, start, stop);
-    case ':': return token_make(TOKEN_COLON, start, stop);
-    case ';': return token_make(TOKEN_SEMICOLON, start, stop);
-    case '{': return token_make(TOKEN_LBRACE, start, stop);
-    case '}': return token_make(TOKEN_RBRACE, start, stop);
-    case '[': return token_make(TOKEN_LBRACKET, start, stop);
-    case ']': return token_make(TOKEN_RBRACKET, start, stop);
-    case '(': return token_make(TOKEN_LPAREN, start, stop);
-    case ')': return token_make(TOKEN_RPAREN, start, stop);
+    case ',': return make_token(TOKEN_COMMA, start, stop);
+    case '.': return make_token(TOKEN_DOT, start, stop);
+    case ':': return make_token(TOKEN_COLON, start, stop);
+    case ';': return make_token(TOKEN_SEMICOLON, start, stop);
+    case '{': return make_token(TOKEN_LBRACE, start, stop);
+    case '}': return make_token(TOKEN_RBRACE, start, stop);
+    case '[': return make_token(TOKEN_LBRACKET, start, stop);
+    case ']': return make_token(TOKEN_RBRACKET, start, stop);
+    case '(': return make_token(TOKEN_LPAREN, start, stop);
+    case ')': return make_token(TOKEN_RPAREN, start, stop);
   };
 
   // impossible
 
-  return token_make(TOKEN_ILLEGAL_CHARACTER, start, stop);
+  return make_token(TOKEN_ILLEGAL_CHARACTER, start, stop);
 }
 
 static LexerCharacterClass const lexer_character_class_table[256] = {

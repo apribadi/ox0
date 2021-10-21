@@ -9,26 +9,6 @@ typedef struct {
   char const * source;
 } Parser;
 
-typedef enum : u8 {
-  PARSER_BINDING_POWER_NONE,
-  PARSER_BINDING_POWER_ASSIGNMENT,
-  PARSER_BINDING_POWER_OR,         // right
-  PARSER_BINDING_POWER_AND,        // right
-  PARSER_BINDING_POWER_EQUALITY,   // left
-  PARSER_BINDING_POWER_COMPARISON, // left
-  PARSER_BINDING_POWER_TERM,       // left
-  PARSER_BINDING_POWER_FACTOR,     // left
-  PARSER_BINDING_POWER_PREFIX,
-  PARSER_BINDING_POWER_CALL,
-  PARSER_BINDING_POWER_PRIMARY,
-} ParserBindingPower;
-
-typedef Sexp ParserResult;
-
-typedef ParserResult (* ParserNullRule) (Parser *);
-
-typedef ParserResult (* ParserLeftRule) (Parser *, ParserResult);
-
 static Parser parser_make(Arena * arena, char const * filename, char const * source) {
   Parser t;
 
@@ -104,13 +84,33 @@ static void parser_consume(Parser * t, TokenTag tag) {
   parser_advance(t);
 }
 
-static ParserResult parser_precedence(Parser * t, ParserBindingPower n);
+typedef enum : u8 {
+  PARSER_EXPRESSION_BINDING_POWER_NONE,
+  PARSER_EXPRESSION_BINDING_POWER_ASSIGNMENT,
+  PARSER_EXPRESSION_BINDING_POWER_OR,         // right
+  PARSER_EXPRESSION_BINDING_POWER_AND,        // right
+  PARSER_EXPRESSION_BINDING_POWER_EQUALITY,   // left
+  PARSER_EXPRESSION_BINDING_POWER_COMPARISON, // left
+  PARSER_EXPRESSION_BINDING_POWER_TERM,       // left
+  PARSER_EXPRESSION_BINDING_POWER_FACTOR,     // left
+  PARSER_EXPRESSION_BINDING_POWER_PREFIX,
+  PARSER_EXPRESSION_BINDING_POWER_CALL,
+  PARSER_EXPRESSION_BINDING_POWER_PRIMARY,
+} ParserBindingPower;
+
+typedef Sexp ParserResult;
+
+typedef ParserResult (* ParserExpressionNullRule) (Parser *);
+
+typedef ParserResult (* ParserExpressionLeftRule) (Parser *, ParserResult);
+
+static ParserResult parser_expression_with_precedence(Parser * t, ParserBindingPower n);
 
 static ParserResult parser_expression(Parser * t) {
-  return parser_precedence(t, PARSER_BINDING_POWER_NONE);
+  return parser_expression_with_precedence(t, PARSER_EXPRESSION_BINDING_POWER_NONE);
 }
 
-static ParserResult parser_grouping(Parser * t) {
+static ParserResult parser_expression_grouping(Parser * t) {
   parser_advance(t);
   ParserResult a = parser_expression(t);
   parser_consume(t, TOKEN_RPAREN);
@@ -120,7 +120,7 @@ static ParserResult parser_grouping(Parser * t) {
 
 static ParserResult parser_neg(Parser * t) {
   parser_advance(t);
-  ParserResult a = parser_precedence(t, PARSER_BINDING_POWER_PREFIX);
+  ParserResult a = parser_expression_with_precedence(t, PARSER_EXPRESSION_BINDING_POWER_PREFIX);
 
   Sexp e = sexp_make_list(t->arena, 2);
   e.as.list.data[0] = sexp_make_atom(1, "-");
@@ -131,7 +131,7 @@ static ParserResult parser_neg(Parser * t) {
 
 static ParserResult parser_add(Parser * t, ParserResult a) {
   parser_advance(t);
-  ParserResult b = parser_precedence(t, PARSER_BINDING_POWER_TERM);
+  ParserResult b = parser_expression_with_precedence(t, PARSER_EXPRESSION_BINDING_POWER_TERM);
 
   Sexp e = sexp_make_list(t->arena, 3);
   e.as.list.data[0] = sexp_make_atom(1, "+");
@@ -143,7 +143,7 @@ static ParserResult parser_add(Parser * t, ParserResult a) {
 
 static ParserResult parser_sub(Parser * t, ParserResult a) {
   parser_advance(t);
-  ParserResult b = parser_precedence(t, PARSER_BINDING_POWER_TERM);
+  ParserResult b = parser_expression_with_precedence(t, PARSER_EXPRESSION_BINDING_POWER_TERM);
 
   Sexp e = sexp_make_list(t->arena, 3);
   e.as.list.data[0] = sexp_make_atom(1, "-");
@@ -155,7 +155,7 @@ static ParserResult parser_sub(Parser * t, ParserResult a) {
 
 static ParserResult parser_mul(Parser * t, ParserResult a) {
   parser_advance(t);
-  ParserResult b = parser_precedence(t, PARSER_BINDING_POWER_FACTOR);
+  ParserResult b = parser_expression_with_precedence(t, PARSER_EXPRESSION_BINDING_POWER_FACTOR);
 
   Sexp e = sexp_make_list(t->arena, 3);
   e.as.list.data[0] = sexp_make_atom(1, "*");
@@ -167,7 +167,7 @@ static ParserResult parser_mul(Parser * t, ParserResult a) {
 
 static ParserResult parser_div(Parser * t, ParserResult a) {
   parser_advance(t);
-  ParserResult b = parser_precedence(t, PARSER_BINDING_POWER_FACTOR);
+  ParserResult b = parser_expression_with_precedence(t, PARSER_EXPRESSION_BINDING_POWER_FACTOR);
 
   Sexp e = sexp_make_list(t->arena, 3);
   e.as.list.data[0] = sexp_make_atom(1, "/");
@@ -191,10 +191,10 @@ static ParserResult parser_null_rule_error(Parser * t) {
   return sexp_make_atom(5, "ERROR");
 }
 
-static ParserNullRule parser_null_rule(TokenTag tag) {
+static ParserExpressionNullRule parser_null_rule(TokenTag tag) {
   switch (tag) {
     case TOKEN_LPAREN:
-      return parser_grouping;
+      return parser_expression_grouping;
     case TOKEN_NEG:
       return parser_neg;
     case TOKEN_NUMBER:
@@ -204,7 +204,7 @@ static ParserNullRule parser_null_rule(TokenTag tag) {
   return parser_null_rule_error;
 }
 
-static ParserLeftRule parser_left_rule(TokenTag tag) {
+static ParserExpressionLeftRule parser_left_rule(TokenTag tag) {
   switch (tag) {
     case TOKEN_ADD:
       return parser_add;
@@ -222,19 +222,19 @@ static ParserLeftRule parser_left_rule(TokenTag tag) {
 static ParserBindingPower parser_left_binding_power(TokenTag tag) {
   switch (tag) {
     case TOKEN_ADD:
-      return PARSER_BINDING_POWER_TERM;
+      return PARSER_EXPRESSION_BINDING_POWER_TERM;
     case TOKEN_SUB:
-      return PARSER_BINDING_POWER_TERM;
+      return PARSER_EXPRESSION_BINDING_POWER_TERM;
     case TOKEN_MUL:
-      return PARSER_BINDING_POWER_FACTOR;
+      return PARSER_EXPRESSION_BINDING_POWER_FACTOR;
     case TOKEN_DIV:
-      return PARSER_BINDING_POWER_FACTOR;
+      return PARSER_EXPRESSION_BINDING_POWER_FACTOR;
   }
 
-  return PARSER_BINDING_POWER_NONE;
+  return PARSER_EXPRESSION_BINDING_POWER_NONE;
 }
 
-static ParserResult parser_precedence(Parser * t, ParserBindingPower right_binding_power) {
+static ParserResult parser_expression_with_precedence(Parser * t, ParserBindingPower right_binding_power) {
   ParserResult e = parser_null_rule(t->token.tag)(t);;
 
   while (right_binding_power < parser_left_binding_power(t->token.tag)) {
