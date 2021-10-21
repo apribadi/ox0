@@ -124,7 +124,7 @@ static Symbol token_symbol(Token t) {
 }
 
 typedef struct {
-  char const * pos;
+  char const * position;
 } Lexer;
 
 static inline Lexer lexer_make(char const * start) {
@@ -182,8 +182,8 @@ static Token lexer_next__loop(LexerState s, char const * p, i64 n) {
 }
 
 static inline Token lexer_next(Lexer * t) {
-  Token r = lexer_next__loop(LEXER_STATE_START, t->pos, 0);
-  t->pos = r.stop;
+  Token r = lexer_next__loop(LEXER_STATE_START, t->position, 0);
+  t->position = r.stop;
   return r;
 }
 
