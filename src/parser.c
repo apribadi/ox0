@@ -98,8 +98,6 @@ typedef enum : u8 {
   PARSER_EXPRESSION_BINDING_POWER_PRIMARY,
 } ParserBindingPower;
 
-typedef Sexp ParserResult;
-
 typedef ParserResult (* ParserExpressionNullRule) (Parser *);
 
 typedef ParserResult (* ParserExpressionLeftRule) (Parser *, ParserResult);
