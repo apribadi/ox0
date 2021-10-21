@@ -10,6 +10,7 @@
 #include "syntax.c"
 #include "lexer.c"
 #include "parser.c"
+#include "codegen.c"
 #include "io.c"
 
 int main(int argc, const char * argv[]) {
@@ -26,17 +27,9 @@ int main(int argc, const char * argv[]) {
 
   SyntaxExpression e = parser_expression(&parser);
 
-  (void) e;
-
-  // sexp_show(e);
-
-  /*
-  lx_t lex = lx_make(source);
-
-  for (tk_t tok = lx_step(&lex); tok.tag != TK_EOF; tok = lx_step(&lex)) {
-    tk_show(tok);
+  if (!parser.is_panicking) {
+    codegen_emit_function(e);
   }
-  */
 
   return 0;
 }
