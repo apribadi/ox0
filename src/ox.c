@@ -6,10 +6,8 @@
 
 #include "util.c"
 #include "memory.c"
-#include "symbol.c"
 #include "sexp.c"
 #include "syntax.c"
-#include "codegen.c"
 #include "lexer.c"
 #include "parser.c"
 #include "io.c"
@@ -26,9 +24,11 @@ int main(int argc, const char * argv[]) {
   Arena arena = arena_make();
   Parser parser = parser_make(&arena, filename, source);
 
-  Sexp e = parser_expression(&parser);
+  SyntaxExpression e = parser_expression(&parser);
 
-  sexp_show(e);
+  (void) e;
+
+  // sexp_show(e);
 
   /*
   lx_t lex = lx_make(source);
