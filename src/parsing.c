@@ -1,11 +1,10 @@
 // parsing
 
 typedef struct {
-  Token token;
   Arena * arena;
+  Token token;
   char const * filename;
   char const * source;
-  char const * position;
 } Parser;
 
 typedef enum : u8 {
@@ -15,13 +14,11 @@ typedef enum : u8 {
 
 static Parser make_parser(Arena * arena, char const * filename, char const * source) {
   Parser t;
-  Token tok = next_token(source);
 
-  t.token = tok;
   t.arena = arena;
+  t.token = next_token(source);
   t.filename = filename;
   t.source = source;
-  t.position = tok.stop;
 
   return t;
 }
@@ -66,9 +63,7 @@ static void report_parse_error(Parser * t, char const * message) {
 }
 
 static void parse_advance(Parser * t) {
-  Token tok = next_token(t->position);
-  t->token = tok;
-  t->position = tok.stop;
+  t->token = next_token(t->token.stop);
 }
 
 static ParseResult parse_consume(Parser * t, TokenTag tag) {
@@ -116,7 +111,7 @@ static ParseResult parse_neg(Parser * t, Expr * e) {
   Expr a;
   parse_advance(t);
   if (parse_expr_with_precedence(t, &a, BINDING_POWER_PREFIX)) return PARSE_ERROR;
-  * e = syntax_make_unary(t->arena, EXPR_OP_NEG, a);
+  * e = make_expr_unary(t->arena, EXPR_OP_NEG, a);
   return PARSE_OK;
 }
 
@@ -124,7 +119,7 @@ static ParseResult parse_add(Parser * t, Expr * e, Expr a) {
   Expr b;
   parse_advance(t);
   if (parse_expr_with_precedence(t, &b, BINDING_POWER_TERM)) return PARSE_ERROR;
-  * e = syntax_make_binary(t->arena, EXPR_OP_ADD, a, b);
+  * e = make_expr_binary(t->arena, EXPR_OP_ADD, a, b);
   return PARSE_OK;
 }
 
@@ -132,7 +127,7 @@ static ParseResult parse_sub(Parser * t, Expr * e, Expr a) {
   Expr b;
   parse_advance(t);
   if (parse_expr_with_precedence(t, &b, BINDING_POWER_TERM)) return PARSE_ERROR;
-  * e = syntax_make_binary(t->arena, EXPR_OP_SUB, a, b);
+  * e = make_expr_binary(t->arena, EXPR_OP_SUB, a, b);
   return PARSE_OK;
 }
 
@@ -140,7 +135,7 @@ static ParseResult parse_mul(Parser * t, Expr * e, Expr a) {
   Expr b;
   parse_advance(t);
   if (parse_expr_with_precedence(t, &b, BINDING_POWER_FACTOR)) return PARSE_ERROR;
-  * e = syntax_make_binary(t->arena, EXPR_OP_MUL, a, b);
+  * e = make_expr_binary(t->arena, EXPR_OP_MUL, a, b);
   return PARSE_OK;
 }
 
@@ -148,12 +143,12 @@ static ParseResult parse_div(Parser * t, Expr * e, Expr a) {
   Expr b;
   parse_advance(t);
   if (parse_expr_with_precedence(t, &b, BINDING_POWER_FACTOR)) return PARSE_ERROR;
-  * e = syntax_make_binary(t->arena, EXPR_OP_DIV, a, b);
+  * e = make_expr_binary(t->arena, EXPR_OP_DIV, a, b);
   return PARSE_OK;
 }
 
 static ParseResult parse_num(Parser * t, Expr * e) {
-  * e = syntax_make_literal(token_symbol(t->token));
+  * e = make_expr_literal(token_symbol(t->token));
   parse_advance(t);
   return PARSE_OK;
 }

@@ -10,7 +10,6 @@ typedef enum : u8 {
 } ExprBinaryOp;
 
 typedef enum : u8 {
-  EXPR_TAG_ERROR,
   EXPR_TAG_UNARY_OP,
   EXPR_TAG_BINARY_OP,
   EXPR_TAG_LITERAL,
@@ -39,17 +38,7 @@ typedef struct ExprBinary {
   Expr right;
 } ExprBinary;
 
-Expr syntax_make_error(void) {
-  Expr exp;
-  exp.tag = EXPR_TAG_ERROR;
-  return exp;
-}
-
-Expr syntax_make_unary(
-      Arena * arena,
-      ExprUnaryOp op,
-      Expr inner
-    ) {
+Expr make_expr_unary(Arena * arena, ExprUnaryOp op, Expr inner) {
   ExprUnary * unary = arena_alloc(arena, sizeof(ExprUnary));
   unary->op = op;
   unary->inner = inner;
@@ -59,12 +48,7 @@ Expr syntax_make_unary(
   return exp;
 }
 
-Expr syntax_make_binary(
-      Arena * arena,
-      ExprBinaryOp op,
-      Expr left,
-      Expr right
-    ) {
+Expr make_expr_binary(Arena * arena, ExprBinaryOp op, Expr left, Expr right) {
   ExprBinary * binary = arena_alloc(arena, sizeof(ExprBinary));
   binary->op = op;
   binary->left = left;
@@ -75,7 +59,7 @@ Expr syntax_make_binary(
   return exp;
 }
 
-Expr syntax_make_literal(Symbol symbol) {
+Expr make_expr_literal(Symbol symbol) {
   Expr exp;
   exp.tag = EXPR_TAG_LITERAL;
   exp.as.literal = symbol;
