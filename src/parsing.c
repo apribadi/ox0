@@ -67,15 +67,8 @@ static void report_parse_error(Parser * t, char const * message) {
     );
 }
 
-static void parse_maybe_report_error(Parser * t, char const * message) {
-  if (t->is_panicking) return;
-  t->is_panicking = true;
-  report_parse_error(t, message);
-}
-
 static void parse_advance(Parser * t) {
   Token tok = next_token(t->position);
-
   t->token = tok;
   t->position = tok.stop;
 }
@@ -87,7 +80,6 @@ static ParseResult parse_consume(Parser * t, TokenTag tag) {
   };
 
   parse_advance(t);
-
   return PARSE_OK;
 }
 
@@ -105,80 +97,85 @@ typedef enum : u8 {
   BINDING_POWER_PRIMARY,
 } BindingPower;
 
-typedef SyntaxExpr (* ParseExprNullRule) (Parser *);
+typedef ParseResult (* ParseExprNullRule) (Parser *, SyntaxExpr *);
 
-typedef SyntaxExpr (* ParseExprLeftRule) (Parser *, SyntaxExpr);
+typedef ParseResult (* ParseExprLeftRule) (Parser *, SyntaxExpr *, SyntaxExpr);
 
-static SyntaxExpr parse_expression_with_precedence(Parser * t, BindingPower n);
+static ParseResult parse_expr_with_precedence(Parser *, SyntaxExpr *, BindingPower);
 
-static SyntaxExpr parse_expression(Parser * t) {
-  return parse_expression_with_precedence(t, BINDING_POWER_NONE);
+static ParseResult parse_expr(Parser * t, SyntaxExpr * e) {
+  return parse_expr_with_precedence(t, e, BINDING_POWER_NONE);
 }
 
-static SyntaxExpr parse_expression_grouping(Parser * t) {
+static ParseResult parse_expr_grouping(Parser * t, SyntaxExpr * e) {
   parse_advance(t);
-  SyntaxExpr a = parse_expression(t);
-  parse_consume(t, TOKEN_RPAREN);
-  return a;
+  if (parse_expr(t, e)) return PARSE_ERROR;
+  if (parse_consume(t, TOKEN_RPAREN)) return PARSE_ERROR;
+  return PARSE_OK;
 }
 
-static SyntaxExpr parse_neg(Parser * t) {
+static ParseResult parse_neg(Parser * t, SyntaxExpr * e) {
+  SyntaxExpr a;
   parse_advance(t);
-  SyntaxExpr a = parse_expression_with_precedence(t, BINDING_POWER_PREFIX);
-  SyntaxExpr e = syntax_make_unary(t->arena, SYNTAX_OPERATOR_NEG, a);
-  return e;
+  if (parse_expr_with_precedence(t, &a, BINDING_POWER_PREFIX)) return PARSE_ERROR;
+  * e = syntax_make_unary(t->arena, SYNTAX_OPERATOR_NEG, a);
+  return PARSE_OK;
 }
 
-static SyntaxExpr parse_add(Parser * t, SyntaxExpr a) {
+static ParseResult parse_add(Parser * t, SyntaxExpr * e, SyntaxExpr a) {
+  SyntaxExpr b;
   parse_advance(t);
-  SyntaxExpr b = parse_expression_with_precedence(t, BINDING_POWER_TERM);
-  SyntaxExpr e = syntax_make_binary(t->arena, SYNTAX_OPERATOR_ADD, a, b);
-  return e;
+  if (parse_expr_with_precedence(t, &b, BINDING_POWER_TERM)) return PARSE_ERROR;
+  * e = syntax_make_binary(t->arena, SYNTAX_OPERATOR_ADD, a, b);
+  return PARSE_OK;
 }
 
-static SyntaxExpr parse_sub(Parser * t, SyntaxExpr a) {
+static ParseResult parse_sub(Parser * t, SyntaxExpr * e, SyntaxExpr a) {
+  SyntaxExpr b;
   parse_advance(t);
-  SyntaxExpr b = parse_expression_with_precedence(t, BINDING_POWER_TERM);
-  SyntaxExpr e = syntax_make_binary(t->arena, SYNTAX_OPERATOR_SUB, a, b);
-  return e;
+  if (parse_expr_with_precedence(t, &b, BINDING_POWER_TERM)) return PARSE_ERROR;
+  * e = syntax_make_binary(t->arena, SYNTAX_OPERATOR_SUB, a, b);
+  return PARSE_OK;
 }
 
-static SyntaxExpr parse_mul(Parser * t, SyntaxExpr a) {
+static ParseResult parse_mul(Parser * t, SyntaxExpr * e, SyntaxExpr a) {
+  SyntaxExpr b;
   parse_advance(t);
-  SyntaxExpr b = parse_expression_with_precedence(t, BINDING_POWER_FACTOR);
-  SyntaxExpr e = syntax_make_binary(t->arena, SYNTAX_OPERATOR_MUL, a, b);
-  return e;
+  if (parse_expr_with_precedence(t, &b, BINDING_POWER_FACTOR)) return PARSE_ERROR;
+  * e = syntax_make_binary(t->arena, SYNTAX_OPERATOR_MUL, a, b);
+  return PARSE_OK;
 }
 
-static SyntaxExpr parse_div(Parser * t, SyntaxExpr a) {
+static ParseResult parse_div(Parser * t, SyntaxExpr * e, SyntaxExpr a) {
+  SyntaxExpr b;
   parse_advance(t);
-  SyntaxExpr b = parse_expression_with_precedence(t, BINDING_POWER_FACTOR);
-  SyntaxExpr e = syntax_make_binary(t->arena, SYNTAX_OPERATOR_DIV, a, b);
-  return e;
+  if (parse_expr_with_precedence(t, &b, BINDING_POWER_FACTOR)) return PARSE_ERROR;
+  * e = syntax_make_binary(t->arena, SYNTAX_OPERATOR_DIV, a, b);
+  return PARSE_OK;
 }
 
-static SyntaxExpr parse_number(Parser * t) {
-  SyntaxExpr e = syntax_make_literal(token_symbol(t->token));
+static ParseResult parse_number(Parser * t, SyntaxExpr * e) {
+  * e = syntax_make_literal(token_symbol(t->token));
   parse_advance(t);
-  return e;
+  return PARSE_OK;
 }
 
-static SyntaxExpr parse_null_rule_error(Parser * t) {
-  parse_maybe_report_error(t, "expected expression");
-  return syntax_make_error();
+static ParseResult parse_null_rule_not_an_expr(Parser * t, __unused SyntaxExpr * e) {
+  report_parse_error(t, "expected expression");
+  return PARSE_ERROR;
 }
 
 static ParseExprNullRule parse_null_rule(TokenTag tag) {
   switch (tag) {
     case TOKEN_LPAREN:
-      return parse_expression_grouping;
+      return parse_expr_grouping;
     case TOKEN_NEG:
       return parse_neg;
     case TOKEN_NUMBER:
       return parse_number;
   }
 
-  return parse_null_rule_error;
+  return parse_null_rule_not_an_expr;
 }
 
 static ParseExprLeftRule parse_left_rule(TokenTag tag) {
@@ -211,12 +208,12 @@ static BindingPower parse_left_binding_power(TokenTag tag) {
   return BINDING_POWER_NONE;
 }
 
-static SyntaxExpr parse_expression_with_precedence(Parser * t, BindingPower right_binding_power) {
-  SyntaxExpr e = parse_null_rule(t->token.tag)(t);;
+static ParseResult parse_expr_with_precedence(Parser * t, SyntaxExpr * e, BindingPower right_binding_power) {
+  if (parse_null_rule(t->token.tag)(t, e)) return PARSE_ERROR;;
 
   while (right_binding_power < parse_left_binding_power(t->token.tag)) {
-    e = parse_left_rule(t->token.tag)(t, e);
+    if (parse_left_rule(t->token.tag)(t, e, * e)) return PARSE_ERROR;
   }
 
-  return e;
+  return PARSE_OK;
 }

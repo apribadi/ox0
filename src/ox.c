@@ -26,11 +26,11 @@ int main(int argc, const char * argv[]) {
   Arena arena = arena_make();
   Parser parser = make_parser(&arena, filename, source);
 
-  SyntaxExpr e = parse_expression(&parser);
+  SyntaxExpr e;
+ 
+  if (parse_expr(&parser, &e)) return 0;
 
-  if (!parser.is_panicking) {
-    codegen_emit_function(e);
-  }
+  codegen_emit_function(e);
 
   return 0;
 }
