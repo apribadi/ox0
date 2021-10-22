@@ -24,9 +24,9 @@ int main(int argc, const char * argv[]) {
   char const * source = io_read(filename);
 
   Arena arena = arena_make();
-  Parser parser = parser_make(&arena, filename, source);
+  Parser parser = make_parser(&arena, filename, source);
 
-  SyntaxExpression e = parser_expression(&parser);
+  SyntaxExpr e = parse_expression(&parser);
 
   if (!parser.is_panicking) {
     codegen_emit_function(e);

@@ -1,8 +1,6 @@
 // lexing
 //
-// Lexer make_lexer(char const * start)
-//
-// Token next_token(Lexer * t)
+// Token next_token(char const * position)
 
 typedef enum : u8 {
   // punctuation
@@ -117,16 +115,6 @@ static Symbol token_symbol(Token t) {
   return make_symbol(t.start, t.stop);
 }
 
-typedef struct {
-  char const * position;
-} Lexer;
-
-static inline Lexer make_lexer(char const * start) {
-  // Input string MUST be terminated by a '\0' character.
-
-  return (Lexer) { start };
-}
-
 typedef enum : u8 {
   CHARACTER_CLASS_UNUSED = 0,
   CHARACTER_CLASS_ALPHA,
@@ -161,7 +149,7 @@ typedef enum : u8 {
 #define LEXER_STATE_COUNT_NONTERMINAL 6
 #define LEXER_STATE_COUNT 12
 
-static CharacterClass const lexer_character_class_table[256];
+static CharacterClass const character_class_table[256];
 
 static LexerState const lexer_transition_table[LEXER_STATE_COUNT_NONTERMINAL][CHARACTER_CLASS_COUNT];
 
@@ -169,16 +157,14 @@ static Token (* const lexer_jump_table[LEXER_STATE_COUNT])(LexerState, char cons
 
 static Token next_token__loop(LexerState s, char const * p, i64 n) {
   n = n + (s < LEXER_STATE_COUNT_MULTICHAR_TOKEN);
-  s = lexer_transition_table[s][lexer_character_class_table[(u8) * p]];
+  s = lexer_transition_table[s][character_class_table[(u8) * p]];
   p = p + 1;
 
   return lexer_jump_table[s](s, p, n);
 }
 
-static inline Token next_token(Lexer * t) {
-  Token r = next_token__loop(LEXER_STATE_START, t->position, 0);
-  t->position = r.stop;
-  return r;
+static inline Token next_token(char const * position) {
+  return next_token__loop(LEXER_STATE_START, position, 0);
 }
 
 static Token next_token__eof(__unused LexerState s, char const * p, __unused i64 n) {
@@ -289,7 +275,7 @@ static Token next_token__punct(__unused LexerState s, char const * p, __unused i
   return make_token(TOKEN_ILLEGAL_CHARACTER, start, stop);
 }
 
-static CharacterClass const lexer_character_class_table[256] = {
+static CharacterClass const character_class_table[256] = {
   ['\0'] = CHARACTER_CLASS_NULL,
   ['\t'] = CHARACTER_CLASS_WHITESPACE,
   ['\n'] = CHARACTER_CLASS_NEWLINE,

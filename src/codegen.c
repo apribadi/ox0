@@ -40,7 +40,7 @@ void codegen_emit_reg_or_literal(CodegenRegOrLiteral arg) {
   }
 }
 
-CodegenRegOrLiteral codegen_emit_expression(Codegen * cg, SyntaxExpression exp) {
+CodegenRegOrLiteral codegen_emit_expression(Codegen * cg, SyntaxExpr exp) {
   switch (exp.tag) {
     case SYNTAX_EXPRESSION_TAG_UNARY_OPERATOR:
       {
@@ -89,7 +89,7 @@ CodegenRegOrLiteral codegen_emit_expression(Codegen * cg, SyntaxExpression exp) 
   return codegen_reg(-1); // ???
 }
 
-void codegen_emit_function(SyntaxExpression exp) {
+void codegen_emit_function(SyntaxExpr exp) {
   Codegen cg = { 0 };
 
   printf("define i64 @foo() {\n");
