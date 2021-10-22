@@ -154,7 +154,7 @@ static ParseResult parse_div(Parser * t, SyntaxExpr * e, SyntaxExpr a) {
   return PARSE_OK;
 }
 
-static ParseResult parse_number(Parser * t, SyntaxExpr * e) {
+static ParseResult parse_num(Parser * t, SyntaxExpr * e) {
   * e = syntax_make_literal(token_symbol(t->token));
   parse_advance(t);
   return PARSE_OK;
@@ -171,8 +171,8 @@ static ParseExprNullRule parse_null_rule(TokenTag tag) {
       return parse_expr_grouping;
     case TOKEN_NEG:
       return parse_neg;
-    case TOKEN_NUMBER:
-      return parse_number;
+    case TOKEN_NUM:
+      return parse_num;
   }
 
   return parse_null_rule_not_an_expr;
