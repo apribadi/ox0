@@ -12,8 +12,8 @@ typedef struct {
 static Parser parser_make(Arena * arena, char const * filename, char const * source) {
   Parser t;
 
-  t.lexer = lexer_make(source);
-  t.token = lexer_next(&t.lexer);
+  t.lexer = make_lexer(source);
+  t.token = next_token(&t.lexer);
   t.arena = arena;
   t.is_panicking = false;
   t.filename = filename;
@@ -66,11 +66,11 @@ static void parser_maybe_report_error(Parser * t, char const * location, char co
 }
 
 static void parser_advance(Parser * t) {
-  Token tok = lexer_next(&t->lexer);
+  Token tok = next_token(&t->lexer);
 
   while (tok.tag == TOKEN_ILLEGAL_CHARACTER) {
     parser_maybe_report_error(t, tok.start, "illegal character");
-    tok = lexer_next(&t->lexer);
+    tok = next_token(&t->lexer);
   }
 
   t->token = tok;

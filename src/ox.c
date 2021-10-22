@@ -9,8 +9,8 @@
 #include "symbol.c"
 #include "sexp.c"
 #include "syntax.c"
-#include "lexer.c"
-#include "parser.c"
+#include "lexing.c"
+#include "parsing.c"
 #include "codegen.c"
 #include "io.c"
 
