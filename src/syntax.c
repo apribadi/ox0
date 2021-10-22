@@ -1,13 +1,13 @@
 typedef enum : u8 {
   EXPR_OP_NEG,
-} ExprUnaryOp;
+} ExprPrefixOp;
 
 typedef enum : u8 {
   EXPR_OP_ADD,
   EXPR_OP_DIV,
   EXPR_OP_MUL,
   EXPR_OP_SUB,
-} ExprBinaryOp;
+} ExprInfixOp;
 
 typedef enum : u8 {
   EXPR_TAG_UNARY_OP,
@@ -15,47 +15,47 @@ typedef enum : u8 {
   EXPR_TAG_LITERAL,
 } ExprTag;
 
-struct ExprUnary;
-struct ExprBinary;
+struct ExprPrefix;
+struct ExprInfix;
 
 typedef struct Expr {
   ExprTag tag;
   union {
-    struct ExprUnary * unary;
-    struct ExprBinary * binary;
+    struct ExprPrefix * prefix;
+    struct ExprInfix * infix;
     Symbol literal;
   } as;
 } Expr;
 
-typedef struct ExprUnary {
-  ExprUnaryOp op;
+typedef struct ExprPrefix {
+  ExprPrefixOp op;
   Expr inner;
-} ExprUnary;
+} ExprPrefix;
 
-typedef struct ExprBinary {
-  ExprBinaryOp op;
+typedef struct ExprInfix {
+  ExprInfixOp op;
   Expr left;
   Expr right;
-} ExprBinary;
+} ExprInfix;
 
-Expr make_expr_unary(Arena * arena, ExprUnaryOp op, Expr inner) {
-  ExprUnary * unary = arena_alloc(arena, sizeof(ExprUnary));
-  unary->op = op;
-  unary->inner = inner;
+Expr make_expr_prefix(Arena * arena, ExprPrefixOp op, Expr inner) {
+  ExprPrefix * prefix = arena_alloc(arena, sizeof(ExprPrefix));
+  prefix->op = op;
+  prefix->inner = inner;
   Expr exp;
   exp.tag = EXPR_TAG_UNARY_OP;
-  exp.as.unary = unary;
+  exp.as.prefix = prefix;
   return exp;
 }
 
-Expr make_expr_binary(Arena * arena, ExprBinaryOp op, Expr left, Expr right) {
-  ExprBinary * binary = arena_alloc(arena, sizeof(ExprBinary));
-  binary->op = op;
-  binary->left = left;
-  binary->right = right;
+Expr make_expr_infix(Arena * arena, ExprInfixOp op, Expr left, Expr right) {
+  ExprInfix * infix = arena_alloc(arena, sizeof(ExprInfix));
+  infix->op = op;
+  infix->left = left;
+  infix->right = right;
   Expr exp;
   exp.tag = EXPR_TAG_BINARY_OP;
-  exp.as.binary = binary;
+  exp.as.infix = infix;
   return exp;
 }
 

@@ -44,10 +44,10 @@ CodegenRegOrLiteral codegen_emit_expression(Codegen * cg, Expr exp) {
   switch (exp.tag) {
     case EXPR_TAG_UNARY_OP:
       {
-        CodegenRegOrLiteral a = codegen_emit_expression(cg, exp.as.unary->inner);
+        CodegenRegOrLiteral a = codegen_emit_expression(cg, exp.as.prefix->inner);
         i64 label = cg->label ++;
         printf("  %%%d = ", (int) label);
-        switch (exp.as.unary->op) {
+        switch (exp.as.prefix->op) {
           case EXPR_OP_NEG:
             printf("sub i64 0, ");
             codegen_emit_reg_or_literal(a);
@@ -58,11 +58,11 @@ CodegenRegOrLiteral codegen_emit_expression(Codegen * cg, Expr exp) {
       }
     case EXPR_TAG_BINARY_OP:
       {
-        CodegenRegOrLiteral a = codegen_emit_expression(cg, exp.as.binary->left);
-        CodegenRegOrLiteral b = codegen_emit_expression(cg, exp.as.binary->right);
+        CodegenRegOrLiteral a = codegen_emit_expression(cg, exp.as.infix->left);
+        CodegenRegOrLiteral b = codegen_emit_expression(cg, exp.as.infix->right);
         i64 label = cg->label ++;
         printf("  %%%d = ", (int) label);
-        switch (exp.as.binary->op) {
+        switch (exp.as.infix->op) {
           case EXPR_OP_ADD:
             printf("add i64 ");
             break;

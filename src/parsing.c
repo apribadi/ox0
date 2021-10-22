@@ -111,7 +111,7 @@ static ParseResult parse_neg(Parser * t, Expr * e) {
   Expr a;
   parse_advance(t);
   if (parse_expr_with_precedence(t, &a, BINDING_POWER_PREFIX)) return PARSE_ERROR;
-  * e = make_expr_unary(t->arena, EXPR_OP_NEG, a);
+  * e = make_expr_prefix(t->arena, EXPR_OP_NEG, a);
   return PARSE_OK;
 }
 
@@ -119,7 +119,7 @@ static ParseResult parse_add(Parser * t, Expr * e, Expr a) {
   Expr b;
   parse_advance(t);
   if (parse_expr_with_precedence(t, &b, BINDING_POWER_TERM)) return PARSE_ERROR;
-  * e = make_expr_binary(t->arena, EXPR_OP_ADD, a, b);
+  * e = make_expr_infix(t->arena, EXPR_OP_ADD, a, b);
   return PARSE_OK;
 }
 
@@ -127,7 +127,7 @@ static ParseResult parse_sub(Parser * t, Expr * e, Expr a) {
   Expr b;
   parse_advance(t);
   if (parse_expr_with_precedence(t, &b, BINDING_POWER_TERM)) return PARSE_ERROR;
-  * e = make_expr_binary(t->arena, EXPR_OP_SUB, a, b);
+  * e = make_expr_infix(t->arena, EXPR_OP_SUB, a, b);
   return PARSE_OK;
 }
 
@@ -135,7 +135,7 @@ static ParseResult parse_mul(Parser * t, Expr * e, Expr a) {
   Expr b;
   parse_advance(t);
   if (parse_expr_with_precedence(t, &b, BINDING_POWER_FACTOR)) return PARSE_ERROR;
-  * e = make_expr_binary(t->arena, EXPR_OP_MUL, a, b);
+  * e = make_expr_infix(t->arena, EXPR_OP_MUL, a, b);
   return PARSE_OK;
 }
 
@@ -143,7 +143,7 @@ static ParseResult parse_div(Parser * t, Expr * e, Expr a) {
   Expr b;
   parse_advance(t);
   if (parse_expr_with_precedence(t, &b, BINDING_POWER_FACTOR)) return PARSE_ERROR;
-  * e = make_expr_binary(t->arena, EXPR_OP_DIV, a, b);
+  * e = make_expr_infix(t->arena, EXPR_OP_DIV, a, b);
   return PARSE_OK;
 }
 
