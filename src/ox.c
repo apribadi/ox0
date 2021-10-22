@@ -26,7 +26,7 @@ int main(int argc, const char * argv[]) {
   Arena arena = arena_make();
   Parser parser = make_parser(&arena, filename, source);
 
-  SyntaxExpr e;
+  Expr e;
  
   if (parse_expr(&parser, &e)) return 0;
 

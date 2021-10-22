@@ -17,7 +17,7 @@ typedef enum : u8 {
   TOKEN_LPAREN,
   TOKEN_RPAREN,
 
-  // operator
+  // op
 
   TOKEN_ADD,
   TOKEN_SUB,
@@ -125,7 +125,7 @@ typedef enum : u8 {
   CHARACTER_CLASS_NULL,
   CHARACTER_CLASS_OP,
   CHARACTER_CLASS_PUNCT,
-  CHARACTER_CLASS_WHITESPACE,
+  CHARACTER_CLASS_SPACE,
 } CharacterClass;
 
 #define CHARACTER_CLASS_COUNT 10
@@ -181,7 +181,7 @@ static Token next_token__illegal_character(__unused LexerState s, char const * p
   return make_token(TOKEN_ILLEGAL_CHARACTER, start, stop);
 }
 
-static Token next_token__identifier(__unused LexerState s, char const * p, i64 n) {
+static Token next_token__id(__unused LexerState s, char const * p, i64 n) {
   char const * start = p - 1 - n;
   char const * stop = p - 1;
 
@@ -214,14 +214,14 @@ static Token next_token__identifier(__unused LexerState s, char const * p, i64 n
   return make_token(TOKEN_ID, start, stop);
 }
 
-static Token next_token__number(__unused LexerState s, char const * p, i64 n) {
+static Token next_token__num(__unused LexerState s, char const * p, i64 n) {
   char const * start = p - 1 - n;
   char const * stop = p - 1;
 
   return make_token(TOKEN_NUM, start, stop);
 }
 
-static Token next_token__operator(__unused LexerState s, char const * p, i64 n) {
+static Token next_token__op(__unused LexerState s, char const * p, i64 n) {
   char const * start = p - 1 - n;
   char const * stop = p - 1;
 
@@ -277,9 +277,9 @@ static Token next_token__punct(__unused LexerState s, char const * p, __unused i
 
 static CharacterClass const character_class_table[256] = {
   ['\0'] = CHARACTER_CLASS_NULL,
-  ['\t'] = CHARACTER_CLASS_WHITESPACE,
+  ['\t'] = CHARACTER_CLASS_SPACE,
   ['\n'] = CHARACTER_CLASS_NEWLINE,
-  [' '] = CHARACTER_CLASS_WHITESPACE,
+  [' '] = CHARACTER_CLASS_SPACE,
   ['!'] = CHARACTER_CLASS_OP,
   ['#'] = CHARACTER_CLASS_HASH,
   ['$'] = CHARACTER_CLASS_OP,
@@ -383,7 +383,7 @@ static LexerState const lexer_transition_table[LEXER_STATE_COUNT_NONTERMINAL][CH
     [CHARACTER_CLASS_NULL] = LEXER_STATE_COMPLETE_ID,
     [CHARACTER_CLASS_OP] = LEXER_STATE_COMPLETE_ID,
     [CHARACTER_CLASS_PUNCT] = LEXER_STATE_COMPLETE_ID,
-    [CHARACTER_CLASS_WHITESPACE] = LEXER_STATE_COMPLETE_ID,
+    [CHARACTER_CLASS_SPACE] = LEXER_STATE_COMPLETE_ID,
   },
   [LEXER_STATE_MINUS] = {
     [CHARACTER_CLASS_UNUSED] = LEXER_STATE_COMPLETE_OP,
@@ -395,7 +395,7 @@ static LexerState const lexer_transition_table[LEXER_STATE_COUNT_NONTERMINAL][CH
     [CHARACTER_CLASS_NULL] = LEXER_STATE_COMPLETE_OP,
     [CHARACTER_CLASS_OP] = LEXER_STATE_OP,
     [CHARACTER_CLASS_PUNCT] = LEXER_STATE_COMPLETE_OP,
-    [CHARACTER_CLASS_WHITESPACE] = LEXER_STATE_COMPLETE_OP,
+    [CHARACTER_CLASS_SPACE] = LEXER_STATE_COMPLETE_OP,
   },
   [LEXER_STATE_NUM] = {
     [CHARACTER_CLASS_UNUSED] = LEXER_STATE_COMPLETE_NUM,
@@ -407,7 +407,7 @@ static LexerState const lexer_transition_table[LEXER_STATE_COUNT_NONTERMINAL][CH
     [CHARACTER_CLASS_NULL] = LEXER_STATE_COMPLETE_NUM,
     [CHARACTER_CLASS_OP] = LEXER_STATE_COMPLETE_NUM,
     [CHARACTER_CLASS_PUNCT] = LEXER_STATE_COMPLETE_NUM,
-    [CHARACTER_CLASS_WHITESPACE] = LEXER_STATE_COMPLETE_NUM,
+    [CHARACTER_CLASS_SPACE] = LEXER_STATE_COMPLETE_NUM,
   },
   [LEXER_STATE_OP] = {
     [CHARACTER_CLASS_UNUSED] = LEXER_STATE_COMPLETE_OP,
@@ -419,7 +419,7 @@ static LexerState const lexer_transition_table[LEXER_STATE_COUNT_NONTERMINAL][CH
     [CHARACTER_CLASS_NULL] = LEXER_STATE_COMPLETE_OP,
     [CHARACTER_CLASS_OP] = LEXER_STATE_OP,
     [CHARACTER_CLASS_PUNCT] = LEXER_STATE_COMPLETE_OP,
-    [CHARACTER_CLASS_WHITESPACE] = LEXER_STATE_COMPLETE_OP,
+    [CHARACTER_CLASS_SPACE] = LEXER_STATE_COMPLETE_OP,
   },
   [LEXER_STATE_COMMENT] = {
     [CHARACTER_CLASS_UNUSED] = LEXER_STATE_COMMENT,
@@ -431,7 +431,7 @@ static LexerState const lexer_transition_table[LEXER_STATE_COUNT_NONTERMINAL][CH
     [CHARACTER_CLASS_NULL] = LEXER_STATE_EOF,
     [CHARACTER_CLASS_OP] = LEXER_STATE_COMMENT,
     [CHARACTER_CLASS_PUNCT] = LEXER_STATE_COMMENT,
-    [CHARACTER_CLASS_WHITESPACE] = LEXER_STATE_COMMENT,
+    [CHARACTER_CLASS_SPACE] = LEXER_STATE_COMMENT,
   },
   [LEXER_STATE_START] = {
     [CHARACTER_CLASS_UNUSED] = LEXER_STATE_ILLEGAL_CHARACTER,
@@ -443,7 +443,7 @@ static LexerState const lexer_transition_table[LEXER_STATE_COUNT_NONTERMINAL][CH
     [CHARACTER_CLASS_NULL] = LEXER_STATE_EOF,
     [CHARACTER_CLASS_OP] = LEXER_STATE_OP,
     [CHARACTER_CLASS_PUNCT] = LEXER_STATE_PUNCT,
-    [CHARACTER_CLASS_WHITESPACE] = LEXER_STATE_START,
+    [CHARACTER_CLASS_SPACE] = LEXER_STATE_START,
   },
 };
 
@@ -454,9 +454,9 @@ static Token (* const lexer_jump_table[LEXER_STATE_COUNT])(LexerState, char cons
   [LEXER_STATE_OP] = next_token__loop,
   [LEXER_STATE_COMMENT] = next_token__loop,
   [LEXER_STATE_START] = next_token__loop,
-  [LEXER_STATE_COMPLETE_ID] = next_token__identifier,
-  [LEXER_STATE_COMPLETE_NUM] = next_token__number,
-  [LEXER_STATE_COMPLETE_OP] = next_token__operator,
+  [LEXER_STATE_COMPLETE_ID] = next_token__id,
+  [LEXER_STATE_COMPLETE_NUM] = next_token__num,
+  [LEXER_STATE_COMPLETE_OP] = next_token__op,
   [LEXER_STATE_EOF] = next_token__eof,
   [LEXER_STATE_ILLEGAL_CHARACTER] = next_token__illegal_character,
   [LEXER_STATE_PUNCT] = next_token__punct,

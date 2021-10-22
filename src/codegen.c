@@ -40,15 +40,15 @@ void codegen_emit_reg_or_literal(CodegenRegOrLiteral arg) {
   }
 }
 
-CodegenRegOrLiteral codegen_emit_expression(Codegen * cg, SyntaxExpr exp) {
+CodegenRegOrLiteral codegen_emit_expression(Codegen * cg, Expr exp) {
   switch (exp.tag) {
-    case SYNTAX_EXPRESSION_TAG_UNARY_OPERATOR:
+    case EXPR_TAG_UNARY_OP:
       {
         CodegenRegOrLiteral a = codegen_emit_expression(cg, exp.as.unary->inner);
         i64 label = cg->label ++;
         printf("  %%%d = ", (int) label);
-        switch (exp.as.unary->operator) {
-          case SYNTAX_OPERATOR_NEG:
+        switch (exp.as.unary->op) {
+          case EXPR_OP_NEG:
             printf("sub i64 0, ");
             codegen_emit_reg_or_literal(a);
             printf("\n");
@@ -56,23 +56,23 @@ CodegenRegOrLiteral codegen_emit_expression(Codegen * cg, SyntaxExpr exp) {
         }
         return codegen_reg(label);
       }
-    case SYNTAX_EXPRESSION_TAG_BINARY_OPERATOR:
+    case EXPR_TAG_BINARY_OP:
       {
         CodegenRegOrLiteral a = codegen_emit_expression(cg, exp.as.binary->left);
         CodegenRegOrLiteral b = codegen_emit_expression(cg, exp.as.binary->right);
         i64 label = cg->label ++;
         printf("  %%%d = ", (int) label);
-        switch (exp.as.binary->operator) {
-          case SYNTAX_OPERATOR_ADD:
+        switch (exp.as.binary->op) {
+          case EXPR_OP_ADD:
             printf("add i64 ");
             break;
-          case SYNTAX_OPERATOR_SUB:
+          case EXPR_OP_SUB:
             printf("sub i64 ");
             break;
-          case SYNTAX_OPERATOR_MUL:
+          case EXPR_OP_MUL:
             printf("mul i64 ");
             break;
-          case SYNTAX_OPERATOR_DIV:
+          case EXPR_OP_DIV:
             printf("sdiv i64 ");
             break;
         }
@@ -82,14 +82,14 @@ CodegenRegOrLiteral codegen_emit_expression(Codegen * cg, SyntaxExpr exp) {
         printf("\n");
         return codegen_reg(label);
       }
-    case SYNTAX_EXPRESSION_TAG_LITERAL:
+    case EXPR_TAG_LITERAL:
       return codegen_literal(exp.as.literal);
   }
 
   return codegen_reg(-1); // ???
 }
 
-void codegen_emit_function(SyntaxExpr exp) {
+void codegen_emit_function(Expr exp) {
   Codegen cg = { 0 };
 
   printf("define i64 @foo() {\n");
